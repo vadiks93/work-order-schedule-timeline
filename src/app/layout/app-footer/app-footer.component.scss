@@ -1,0 +1,22 @@
+:host {
+  display: block;
+  min-width: 800px;
+}
+
+.app-footer {
+  min-height: 48px;
+  background: #fff;
+
+  &__content {
+    width: min(1280px, calc(100% - 80px));
+    min-width: 720px;
+    height: 100%;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 899px) {
+  .app-footer__content {
+    width: 720px;
+  }
+}

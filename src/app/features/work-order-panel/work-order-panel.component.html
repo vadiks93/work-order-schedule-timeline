@@ -1,0 +1,134 @@
+<aside
+  class="work-order-panel"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="work-order-panel-title"
+  aria-describedby="work-order-panel-description"
+>
+  <header class="work-order-panel__header">
+    <div>
+      <h2 class="work-order-panel__title" id="work-order-panel-title">Work Order Details</h2>
+      <p class="work-order-panel__description" id="work-order-panel-description">
+        Specify the dates, name and status for this order
+      </p>
+    </div>
+
+    <div class="work-order-panel__actions">
+      <button class="button button--secondary" type="button" (click)="closed.emit()">Cancel</button>
+      <button class="button button--primary" type="submit" form="work-order-form">
+        {{ isEditing ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </header>
+
+  <form
+    class="work-order-panel__form"
+    id="work-order-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <div class="form-field">
+      <label class="form-field__label" for="work-order-name">Work Order Name</label>
+      <input
+        class="form-field__control"
+        id="work-order-name"
+        type="text"
+        formControlName="name"
+        placeholder="Acme Inc."
+        autocomplete="off"
+        autofocus
+        [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched"
+        aria-describedby="work-order-name-error"
+      />
+      @if (form.controls.name.invalid && form.controls.name.touched) {
+        <span class="form-field__error" id="work-order-name-error">Enter a work order name.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-field__label" for="work-center">Work Center</label>
+      <ng-select
+        inputId="work-center"
+        formControlName="workCenterId"
+        [clearable]="false"
+        [searchable]="false"
+        bindLabel="data.name"
+        bindValue="docId"
+        [items]="workCenters"
+        aria-label="Work center"
+      />
+    </div>
+
+    <div class="form-field">
+      <label class="form-field__label" for="work-order-status">Status</label>
+      <ng-select
+        inputId="work-order-status"
+        formControlName="status"
+        [clearable]="false"
+        [searchable]="false"
+        bindLabel="label"
+        bindValue="value"
+        [items]="statusOptions"
+        aria-label="Work order status"
+      />
+    </div>
+
+    <div class="form-field">
+      <label class="form-field__label" for="start-date">Start date</label>
+      <div class="date-control">
+        <input
+          class="form-field__control"
+          id="start-date"
+          placeholder="yyyy-mm-dd"
+          formControlName="startDate"
+          ngbDatepicker
+          #startPicker="ngbDatepicker"
+          [attr.aria-invalid]="form.controls.startDate.invalid && form.controls.startDate.touched"
+        />
+        <button
+          class="date-control__button"
+          type="button"
+          aria-label="Open start date calendar"
+          (click)="startPicker.toggle()"
+        >
+          <span aria-hidden="true">▦</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label class="form-field__label" for="end-date">End date</label>
+      <div class="date-control">
+        <input
+          class="form-field__control"
+          id="end-date"
+          placeholder="yyyy-mm-dd"
+          formControlName="endDate"
+          ngbDatepicker
+          #endPicker="ngbDatepicker"
+          [attr.aria-invalid]="dateRangeInvalid || (form.controls.endDate.invalid && form.controls.endDate.touched)"
+          aria-describedby="date-range-error"
+        />
+        <button
+          class="date-control__button"
+          type="button"
+          aria-label="Open end date calendar"
+          (click)="endPicker.toggle()"
+        >
+          <span aria-hidden="true">▦</span>
+        </button>
+      </div>
+      @if (dateRangeInvalid) {
+        <span class="form-field__error" id="date-range-error">
+          End date must be on or after the start date.
+        </span>
+      }
+    </div>
+
+    @if (overlapError) {
+      <div class="work-order-panel__alert" role="alert">
+        This work order overlaps another order in the selected work center.
+      </div>
+    }
+  </form>
+</aside>

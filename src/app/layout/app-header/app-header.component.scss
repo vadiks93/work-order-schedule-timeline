@@ -1,0 +1,28 @@
+:host {
+  display: block;
+  min-width: 800px;
+}
+
+.app-header {
+  background: #fff;
+
+  &__content {
+    box-sizing: border-box;
+    width: min(1280px, calc(100% - 80px));
+    min-width: 720px;
+    margin: 0 auto;
+    padding-top: 20px;
+  }
+
+  &__logo {
+    display: block;
+    width: 81px;
+    height: auto;
+  }
+}
+
+@media (max-width: 899px) {
+  .app-header__content {
+    width: 720px;
+  }
+}

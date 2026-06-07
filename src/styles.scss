@@ -1,0 +1,46 @@
+@font-face {
+  font-family: 'Circular-Std';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://naologic-com-assets.naologic.com/fonts/circular-std/CircularStd-Book.woff2')
+    format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Circular-Std';
+  font-style: normal;
+  font-weight: 600;
+  src: url('https://naologic-com-assets.naologic.com/fonts/circular-std/CircularStd-Medium.woff2')
+    format('woff2');
+  font-display: swap;
+}
+
+:root {
+  font-family: 'Circular-Std', Inter, Arial, sans-serif;
+  color-scheme: light;
+  font-synthesis: none;
+}
+
+html,
+body {
+  min-width: 800px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: #fff;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid rgb(80 77 255 / 35%);
+  outline-offset: 2px;
+}

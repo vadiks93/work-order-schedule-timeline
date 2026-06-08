@@ -59,7 +59,7 @@ Start the development server:
 npm start
 ```
 
-Open `http://localhost:4200`.
+Open `http://localhost:57933`.
 
 Create a production build:
 
@@ -120,6 +120,9 @@ keyboard navigation, automated axe checks, and manual screen-reader testing.
 
 See [documentation.md](documentation.md) for the complete requirement mapping, implementation
 details, known limitations, and improvement roadmap.
+
+See [thought-process.md](thought-process.md) for the chronological list of project questions,
+requests, and corrections used during AI-assisted development.
 
 ## Private GitHub Repository
 

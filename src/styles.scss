@@ -17,6 +17,12 @@
 }
 
 :root {
+  --app-gutter: clamp(32px, 6.5vw, 120px);
+  --timeline-row-height: clamp(44px, calc(38px + 0.78125vw), 58px);
+  --timeline-header-height: clamp(38px, calc(34px + 0.5208vw), 46px);
+  --timeline-work-center-width: clamp(220px, 19.53125vw, 360px);
+  --timeline-height: clamp(560px, calc(390px + 16.93vw), 820px);
+
   font-family: 'Circular-Std', Inter, Arial, sans-serif;
   color-scheme: light;
   font-synthesis: none;

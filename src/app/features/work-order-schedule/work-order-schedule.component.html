@@ -1,23 +1,25 @@
-<main class="schedule">
+<div class="schedule">
   <div class="schedule__content">
     <a class="schedule__skip-link" href="#timeline-grid">Skip to timeline</a>
 
     <h1 class="schedule__title">Work Orders</h1>
 
     <div class="schedule__toolbar">
-      <label class="timescale" for="timescale">
+      <div class="timescale">
         <span class="timescale__label">Timescale</span>
-        <select
+        <ng-select
           class="timescale__select"
-          id="timescale"
-          [value]="timescale()"
-          (change)="setTimescale($any($event.target).value)"
-        >
-          @for (scale of timescales; track scale) {
-            <option [value]="scale">{{ scale[0].toUpperCase() + scale.slice(1) }}</option>
-          }
-        </select>
-      </label>
+          inputId="timescale"
+          aria-label="Timeline timescale"
+          [items]="timescaleOptions"
+          bindLabel="label"
+          bindValue="value"
+          [clearable]="false"
+          [searchable]="false"
+          [ngModel]="timescale()"
+          (ngModelChange)="setTimescale($event)"
+        />
+      </div>
       <p class="schedule__hint" id="timeline-instructions">
         Select an empty point to create an order. Use Tab to reach order actions.
       </p>
@@ -71,7 +73,21 @@
                 type="button"
                 [attr.aria-label]="'Create a work order for ' + center.data.name"
                 (click)="createFromPointer($event, center.docId)"
+                (pointermove)="updateHoverPreview($event, center.docId)"
+                (pointerleave)="clearHoverPreview()"
               ></button>
+
+              @if (hoverPreview(); as preview) {
+                @if (preview.workCenterId === center.docId) {
+                  <div
+                    class="timeline__create-preview"
+                    [ngStyle]="previewStyle(preview)"
+                    aria-hidden="true"
+                  >
+                    <span class="timeline__create-preview-label">Click to add dates</span>
+                  </div>
+                }
+              }
 
               @for (order of ordersFor(center.docId); track order.docId) {
                 <article
@@ -124,7 +140,7 @@
       </div>
     </section>
   </div>
-</main>
+</div>
 
 @if (panelOpen()) {
   <button

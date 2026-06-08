@@ -7,6 +7,8 @@ import {
   signal,
 } from '@angular/core';
 import { NgStyle } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { WorkOrderPanelComponent } from '../work-order-panel/work-order-panel.component';
 import {
   STATUS_LABELS,
@@ -23,9 +25,21 @@ interface TimelineConfig {
   columnWidth: number;
 }
 
+interface HoverPreview {
+  workCenterId: string;
+  startDate: string;
+  left: number;
+  width: number;
+}
+
+interface TimescaleOption {
+  value: Timescale;
+  label: string;
+}
+
 @Component({
   selector: 'app-work-order-schedule',
-  imports: [NgStyle, WorkOrderPanelComponent],
+  imports: [NgStyle, FormsModule, NgSelectModule, WorkOrderPanelComponent],
   templateUrl: './work-order-schedule.component.html',
   styleUrl: './work-order-schedule.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,14 +47,19 @@ interface TimelineConfig {
 export class WorkOrderScheduleComponent {
   protected readonly store = inject(ScheduleStore);
   protected readonly statusLabels = STATUS_LABELS;
-  protected readonly timescales: Timescale[] = ['day', 'week', 'month'];
-  protected readonly timescale = signal<Timescale>('month');
+  protected readonly timescaleOptions: TimescaleOption[] = [
+    { value: 'day', label: 'Day' },
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+  ];
+  protected readonly timescale = signal<Timescale>('day');
   protected readonly openMenuId = signal<string | null>(null);
   protected readonly panelOpen = signal(false);
   protected readonly editingOrder = signal<WorkOrderDocument | null>(null);
   protected readonly initialWorkCenterId = signal('');
   protected readonly initialStartDate = signal('');
   protected readonly overlapError = signal(false);
+  protected readonly hoverPreview = signal<HoverPreview | null>(null);
 
   protected readonly timeline = computed<TimelineConfig>(() =>
     this.createTimeline(this.timescale()),
@@ -64,8 +83,12 @@ export class WorkOrderScheduleComponent {
     this.openMenuId.set(null);
   }
 
-  protected setTimescale(value: string): void {
-    this.timescale.set(value as Timescale);
+  protected setTimescale(value: Timescale | null): void {
+    if (!value) {
+      return;
+    }
+    this.timescale.set(value);
+    this.hoverPreview.set(null);
   }
 
   protected ordersFor(workCenterId: string): WorkOrderDocument[] {
@@ -90,6 +113,50 @@ export class WorkOrderScheduleComponent {
     const row = event.currentTarget as HTMLElement;
     const x = event.clientX - row.getBoundingClientRect().left;
     this.openCreate(workCenterId, this.dateAtPosition(x));
+  }
+
+  protected updateHoverPreview(event: PointerEvent, workCenterId: string): void {
+    const row = event.currentTarget as HTMLElement;
+    const x = event.clientX - row.getBoundingClientRect().left;
+    const start = this.dateAtPosition(x);
+    const end = this.addDays(start, 7);
+    const startDate = this.toIso(start);
+    const endDate = this.toIso(end);
+
+    if (
+      this.store.hasOverlap({
+        name: '',
+        workCenterId,
+        status: 'open',
+        startDate,
+        endDate,
+      })
+    ) {
+      this.hoverPreview.set(null);
+      return;
+    }
+
+    const left = Math.max(0, this.positionForDate(start));
+    const dayAfterEnd = this.addDays(end, 1);
+    const right = Math.min(this.canvasWidth(), this.positionForDate(dayAfterEnd));
+
+    this.hoverPreview.set({
+      workCenterId,
+      startDate,
+      left,
+      width: Math.max(42, right - left),
+    });
+  }
+
+  protected clearHoverPreview(): void {
+    this.hoverPreview.set(null);
+  }
+
+  protected previewStyle(preview: HoverPreview): Record<string, string> {
+    return {
+      left: `${preview.left}px`,
+      width: `${preview.width}px`,
+    };
   }
 
   protected createFromKeyboard(workCenterId: string): void {

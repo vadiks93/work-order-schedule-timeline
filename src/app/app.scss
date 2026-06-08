@@ -1,0 +1,8 @@
+:host {
+  display: block;
+  min-width: 800px;
+}
+
+.app-main {
+  margin-right: clamp(8px, 1vw, 16px);
+}

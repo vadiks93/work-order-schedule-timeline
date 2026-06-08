@@ -51,7 +51,7 @@ Start the development server:
 npm start
 ```
 
-Open `http://localhost:4200`.
+Open `http://localhost:57933`.
 
 Create a production build:
 
@@ -254,12 +254,12 @@ Each visible work order displays:
 
 Status styling:
 
-| Status | Visual treatment |
-| --- | --- |
-| Open | Blue/purple |
-| In progress | Blue/purple |
-| Complete | Green |
-| Blocked | Yellow/orange |
+| Status      | Visual treatment |
+| ----------- | ---------------- |
+| Open        | Blue/purple      |
+| In progress | Blue/purple      |
+| Complete    | Green            |
+| Blocked     | Yellow/orange    |
 
 The textual status remains visible so status is not communicated through color alone.
 
@@ -346,9 +346,12 @@ Component styles use BEM naming:
 
 ```scss
 .work-order {
-  &__name {}
-  &__status {}
-  &--complete {}
+  &__name {
+  }
+  &__status {
+  }
+  &--complete {
+  }
 }
 ```
 
@@ -432,49 +435,49 @@ Recommended future coverage:
 
 ## 17. Requirement Status
 
-| Requirement | Status |
-| --- | --- |
-| Angular 17+ | Implemented with Angular 21.2 |
-| Standalone components | Implemented |
-| Semantic application header | Implemented |
-| Semantic application footer | Implemented |
-| Strict TypeScript | Implemented |
-| SCSS | Implemented |
-| BEM styling | Implemented |
-| Reactive Forms | Implemented |
-| ng-select | Implemented |
-| ngb-datepicker | Implemented |
-| Day view | Implemented |
-| Week view | Implemented |
-| Month view | Implemented |
-| Fixed work-center panel | Implemented |
-| Horizontal timeline scrolling | Implemented |
-| Current-date indicator | Implemented |
-| Row hover state | Implemented |
-| Status badges | Implemented |
-| Click timeline to create | Implemented |
-| Pre-filled start date | Implemented |
-| Default end date | Implemented |
-| Edit workflow | Implemented |
-| Delete workflow | Implemented |
-| Click outside panel to close | Implemented |
-| Cancel panel action | Implemented |
-| Required-field validation | Implemented |
-| End-date validation | Implemented |
-| Overlap validation | Implemented |
-| Five or more work centers | Implemented |
-| Eight or more work orders | Implemented |
-| All statuses represented | Implemented |
-| Minimum 800px support | Implemented |
-| Unit tests | Partially implemented |
-| Pixel-perfect matching | Requires further refinement |
-| Local storage | Not implemented |
-| Infinite scrolling | Not implemented |
-| Today navigation button | Not implemented |
-| Work-order tooltip | Not implemented |
-| Drag date selection | Not implemented |
-| Loom demonstration | External deliverable |
-| Public repository | External deliverable |
+| Requirement                   | Status                        |
+| ----------------------------- | ----------------------------- |
+| Angular 17+                   | Implemented with Angular 21.2 |
+| Standalone components         | Implemented                   |
+| Semantic application header   | Implemented                   |
+| Semantic application footer   | Implemented                   |
+| Strict TypeScript             | Implemented                   |
+| SCSS                          | Implemented                   |
+| BEM styling                   | Implemented                   |
+| Reactive Forms                | Implemented                   |
+| ng-select                     | Implemented                   |
+| ngb-datepicker                | Implemented                   |
+| Day view                      | Implemented                   |
+| Week view                     | Implemented                   |
+| Month view                    | Implemented                   |
+| Fixed work-center panel       | Implemented                   |
+| Horizontal timeline scrolling | Implemented                   |
+| Current-date indicator        | Implemented                   |
+| Row hover state               | Implemented                   |
+| Status badges                 | Implemented                   |
+| Click timeline to create      | Implemented                   |
+| Pre-filled start date         | Implemented                   |
+| Default end date              | Implemented                   |
+| Edit workflow                 | Implemented                   |
+| Delete workflow               | Implemented                   |
+| Click outside panel to close  | Implemented                   |
+| Cancel panel action           | Implemented                   |
+| Required-field validation     | Implemented                   |
+| End-date validation           | Implemented                   |
+| Overlap validation            | Implemented                   |
+| Five or more work centers     | Implemented                   |
+| Eight or more work orders     | Implemented                   |
+| All statuses represented      | Implemented                   |
+| Minimum 800px support         | Implemented                   |
+| Unit tests                    | Partially implemented         |
+| Pixel-perfect matching        | Requires further refinement   |
+| Local storage                 | Not implemented               |
+| Infinite scrolling            | Not implemented               |
+| Today navigation button       | Not implemented               |
+| Work-order tooltip            | Not implemented               |
+| Drag date selection           | Not implemented               |
+| Loom demonstration            | External deliverable          |
+| Public repository             | External deliverable          |
 
 ## 18. Known Limitations
 
@@ -546,3 +549,10 @@ The demonstration should cover:
 4. Deleting a work order.
 5. Triggering an overlap validation error.
 6. Explaining the component and store structure.
+
+## 21. AI-Assisted Thought Process
+
+The chronological user question and iteration log is maintained in
+[`thought-process.md`](thought-process.md). It contains requests and corrections only, without
+assistant answers, so it can be included as evidence of the project's AI-assisted development
+process.

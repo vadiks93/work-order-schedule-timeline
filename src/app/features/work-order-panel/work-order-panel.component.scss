@@ -11,8 +11,8 @@
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  background: #fff;
-  box-shadow: -8px 0 24px rgb(27 35 67 / 14%);
+  background: var(--color-white);
+  box-shadow: -4px 0 12px var(--color-panel-shadow);
   animation: panel-enter 180ms ease-out;
 
   &__header {
@@ -21,20 +21,26 @@
     justify-content: space-between;
     gap: 24px;
     padding: 20px 24px 16px;
-    border-bottom: 1px solid #e4e8f2;
+    border-bottom: 1px solid var(--color-border-panel);
   }
 
   &__title {
     margin: 0 0 4px;
-    color: #242c52;
+    color: var(--color-panel-title);
     font-size: 21px;
     font-weight: 600;
   }
 
   &__description {
     margin: 0;
-    color: #65709a;
+    color: var(--color-muted-label);
     font-size: 15px;
+  }
+
+  &__required-note {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
   }
 
   &__actions {
@@ -45,16 +51,16 @@
 
   &__form {
     display: grid;
-    gap: 22px;
-    padding: 26px 24px;
+    gap: 8px;
+    padding: 22px 24px;
   }
 
   &__alert {
     padding: 12px 14px;
-    border: 1px solid #efb5b5;
+    border: 1px solid var(--color-error-border);
     border-radius: 6px;
-    background: #fff3f3;
-    color: #a32929;
+    background: var(--color-error-background);
+    color: var(--color-error-text);
     font-size: 14px;
   }
 }
@@ -68,24 +74,24 @@
   cursor: pointer;
 
   &--secondary {
-    border-color: #e1e5ef;
-    background: #fff;
-    color: #252d50;
+    border-color: var(--color-border-control);
+    background: var(--color-white);
+    color: var(--color-control-text);
   }
 
   &--primary {
-    background: #504dff;
-    color: #fff;
-    box-shadow: 0 2px 5px rgb(80 77 255 / 28%);
+    background: var(--color-primary);
+    color: var(--color-white);
+    box-shadow: 0 2px 5px var(--color-primary-shadow);
   }
 }
 
 .form-field {
   display: grid;
-  gap: 7px;
+  gap: 5px;
 
   &__label {
-    color: #65709a;
+    color: var(--color-muted-label);
     font-size: 13px;
   }
 
@@ -94,26 +100,33 @@
     width: 100%;
     height: 39px;
     padding: 0 10px;
-    border: 1px solid #ccd4e5;
+    border: 1px solid var(--color-border-input);
     border-radius: 5px;
     outline: 0;
-    color: #1e2748;
+    color: var(--color-input-text);
     font: inherit;
-    box-shadow: 0 1px 2px rgb(18 29 63 / 8%);
+    box-shadow: 0 1px 2px var(--color-input-shadow);
 
     &:focus {
-      border-color: #514eff;
-      box-shadow: 0 0 0 3px rgb(81 78 255 / 16%);
+      border-color: var(--color-primary-focus);
+      box-shadow: 0 0 0 3px var(--color-input-focus-shadow);
     }
 
     &[aria-invalid='true'] {
-      border-color: #c94343;
+      border-color: var(--color-error-control);
     }
   }
 
   &__error {
-    color: #b62f2f;
+    color: var(--color-error-message);
     font-size: 12px;
+  }
+
+  &__error-slot {
+    display: flex;
+    align-items: flex-start;
+    height: 30px;
+    overflow: hidden;
   }
 }
 
@@ -127,10 +140,10 @@
     width: 38px;
     height: 37px;
     border: 0;
-    border-left: 1px solid #e1e5ef;
+    border-left: 1px solid var(--color-border-control);
     border-radius: 0 5px 5px 0;
-    background: #f8f9fc;
-    color: #596487;
+    background: var(--color-surface-subtle);
+    color: var(--color-muted-calendar);
     cursor: pointer;
   }
 }
@@ -138,15 +151,27 @@
 :host ::ng-deep {
   .ng-select .ng-select-container {
     min-height: 39px;
-    border-color: #ccd4e5;
+    border-color: var(--color-border-input);
     border-radius: 5px;
-    color: #1e2748;
-    box-shadow: 0 1px 2px rgb(18 29 63 / 8%);
+    color: var(--color-input-text);
+    box-shadow: 0 1px 2px var(--color-input-shadow);
   }
 
   .ng-select.ng-select-focused:not(.ng-select-opened) > .ng-select-container {
-    border-color: #514eff;
-    box-shadow: 0 0 0 3px rgb(81 78 255 / 16%);
+    border-color: var(--color-primary-focus);
+    box-shadow: 0 0 0 3px var(--color-input-focus-shadow);
+  }
+
+  .form-field__status-select {
+    .ng-value-container,
+    .ng-option {
+      align-items: center;
+    }
+
+    .ng-option {
+      display: flex;
+      min-height: 38px;
+    }
   }
 }
 

@@ -9,7 +9,8 @@
     <div>
       <h2 class="work-order-panel__title" id="work-order-panel-title">Work Order Details</h2>
       <p class="work-order-panel__description" id="work-order-panel-description">
-        Specify the dates, name and status for this order
+        Specify the dates, name and status for this order.
+        <span class="work-order-panel__required-note">All fields are required.</span>
       </p>
     </div>
 
@@ -30,6 +31,7 @@
     <div class="form-field">
       <label class="form-field__label" for="work-order-name">Work Order Name</label>
       <input
+        #workOrderName
         class="form-field__control"
         id="work-order-name"
         type="text"
@@ -37,12 +39,17 @@
         placeholder="Acme Inc."
         autocomplete="off"
         autofocus
-        [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched"
-        aria-describedby="work-order-name-error"
+        required
+        [attr.aria-invalid]="nameErrorVisible"
+        [attr.aria-describedby]="nameErrorVisible ? 'work-order-name-error' : null"
       />
-      @if (form.controls.name.invalid && form.controls.name.touched) {
-        <span class="form-field__error" id="work-order-name-error">Enter a work order name.</span>
-      }
+      <div class="form-field__error-slot">
+        @if (nameErrorVisible) {
+          <span class="form-field__error" id="work-order-name-error">
+            Enter a work order name.
+          </span>
+        }
+      </div>
     </div>
 
     <div class="form-field">
@@ -56,12 +63,15 @@
         bindValue="docId"
         [items]="workCenters"
         aria-label="Work center"
+        aria-required="true"
       />
+      <div class="form-field__error-slot"></div>
     </div>
 
     <div class="form-field">
       <label class="form-field__label" for="work-order-status">Status</label>
       <ng-select
+        class="form-field__status-select"
         inputId="work-order-status"
         formControlName="status"
         [clearable]="false"
@@ -70,7 +80,24 @@
         bindValue="value"
         [items]="statusOptions"
         aria-label="Work order status"
-      />
+        aria-required="true"
+      >
+        <ng-template ng-label-tmp let-item="item">
+          <app-chip
+            size="timeline"
+            [variant]="statusChipVariant(item.value)"
+            [label]="item.label"
+          />
+        </ng-template>
+        <ng-template ng-option-tmp let-item="item">
+          <app-chip
+            size="timeline"
+            [variant]="statusChipVariant(item.value)"
+            [label]="item.label"
+          />
+        </ng-template>
+      </ng-select>
+      <div class="form-field__error-slot"></div>
     </div>
 
     <div class="form-field">
@@ -83,7 +110,9 @@
           formControlName="startDate"
           ngbDatepicker
           #startPicker="ngbDatepicker"
-          [attr.aria-invalid]="form.controls.startDate.invalid && form.controls.startDate.touched"
+          required
+          [attr.aria-invalid]="startDateErrorVisible"
+          [attr.aria-describedby]="startDateErrorVisible ? 'start-date-error' : null"
         />
         <button
           class="date-control__button"
@@ -93,6 +122,11 @@
         >
           <span aria-hidden="true">▦</span>
         </button>
+      </div>
+      <div class="form-field__error-slot">
+        @if (startDateErrorVisible) {
+          <span class="form-field__error" id="start-date-error">Enter a start date.</span>
+        }
       </div>
     </div>
 
@@ -106,8 +140,9 @@
           formControlName="endDate"
           ngbDatepicker
           #endPicker="ngbDatepicker"
-          [attr.aria-invalid]="dateRangeInvalid || (form.controls.endDate.invalid && form.controls.endDate.touched)"
-          aria-describedby="date-range-error"
+          required
+          [attr.aria-invalid]="endDateErrorVisible"
+          [attr.aria-describedby]="endDateErrorVisible ? 'end-date-error' : null"
         />
         <button
           class="date-control__button"
@@ -118,11 +153,17 @@
           <span aria-hidden="true">▦</span>
         </button>
       </div>
-      @if (dateRangeInvalid) {
-        <span class="form-field__error" id="date-range-error">
-          End date must be on or after the start date.
-        </span>
-      }
+      <div class="form-field__error-slot">
+        @if (endDateErrorVisible) {
+          <span class="form-field__error" id="end-date-error">
+            {{
+              dateRangeInvalid
+                ? 'End date must be on or after the start date.'
+                : 'Enter an end date.'
+            }}
+          </span>
+        }
+      </div>
     </div>
 
     @if (overlapError) {

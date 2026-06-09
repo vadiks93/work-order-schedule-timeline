@@ -1,7 +1,10 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   HostListener,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -10,6 +13,7 @@ import { NgStyle } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { WorkOrderPanelComponent } from '../work-order-panel/work-order-panel.component';
+import { ChipComponent, ChipVariant } from '../../shared/chip/chip.component';
 import {
   STATUS_LABELS,
   TimelineColumn,
@@ -39,12 +43,15 @@ interface TimescaleOption {
 
 @Component({
   selector: 'app-work-order-schedule',
-  imports: [NgStyle, FormsModule, NgSelectModule, WorkOrderPanelComponent],
+  imports: [NgStyle, FormsModule, NgSelectModule, WorkOrderPanelComponent, ChipComponent],
   templateUrl: './work-order-schedule.component.html',
   styleUrl: './work-order-schedule.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WorkOrderScheduleComponent {
+export class WorkOrderScheduleComponent implements AfterViewInit {
+  @ViewChild('timelineViewport')
+  private timelineViewport?: ElementRef<HTMLDivElement>;
+
   protected readonly store = inject(ScheduleStore);
   protected readonly statusLabels = STATUS_LABELS;
   protected readonly timescaleOptions: TimescaleOption[] = [
@@ -58,8 +65,10 @@ export class WorkOrderScheduleComponent {
   protected readonly editingOrder = signal<WorkOrderDocument | null>(null);
   protected readonly initialWorkCenterId = signal('');
   protected readonly initialStartDate = signal('');
+  protected readonly initialEndDate = signal('');
   protected readonly overlapError = signal(false);
   protected readonly hoverPreview = signal<HoverPreview | null>(null);
+  private panelTrigger: HTMLElement | null = null;
 
   protected readonly timeline = computed<TimelineConfig>(() =>
     this.createTimeline(this.timescale()),
@@ -67,7 +76,21 @@ export class WorkOrderScheduleComponent {
   protected readonly canvasWidth = computed(
     () => this.timeline().columns.length * this.timeline().columnWidth,
   );
-  protected readonly todayPosition = computed(() => this.positionForDate(new Date()));
+  protected readonly currentPeriodLabel = computed(() => {
+    const labels: Record<Timescale, string> = {
+      day: 'Current day',
+      week: 'Current week',
+      month: 'Current month',
+    };
+    return labels[this.timescale()];
+  });
+  protected readonly currentPeriodPosition = computed(() =>
+    this.positionForDate(this.currentPeriodStart()),
+  );
+
+  ngAfterViewInit(): void {
+    this.scheduleCenterOnToday();
+  }
 
   @HostListener('document:keydown.escape')
   protected handleEscape(): void {
@@ -89,6 +112,7 @@ export class WorkOrderScheduleComponent {
     }
     this.timescale.set(value);
     this.hoverPreview.set(null);
+    this.scheduleCenterOnToday();
   }
 
   protected ordersFor(workCenterId: string): WorkOrderDocument[] {
@@ -112,32 +136,27 @@ export class WorkOrderScheduleComponent {
     }
     const row = event.currentTarget as HTMLElement;
     const x = event.clientX - row.getBoundingClientRect().left;
-    this.openCreate(workCenterId, this.dateAtPosition(x));
+    const start = this.dateAtPosition(x);
+    const endDate = this.availableEndDate(workCenterId, start);
+    if (endDate) {
+      this.openCreate(workCenterId, start, endDate);
+    }
   }
 
   protected updateHoverPreview(event: PointerEvent, workCenterId: string): void {
     const row = event.currentTarget as HTMLElement;
     const x = event.clientX - row.getBoundingClientRect().left;
     const start = this.dateAtPosition(x);
-    const end = this.addDays(start, 7);
     const startDate = this.toIso(start);
-    const endDate = this.toIso(end);
+    const endDate = this.availableEndDate(workCenterId, start);
 
-    if (
-      this.store.hasOverlap({
-        name: '',
-        workCenterId,
-        status: 'open',
-        startDate,
-        endDate,
-      })
-    ) {
+    if (!endDate) {
       this.hoverPreview.set(null);
       return;
     }
 
     const left = Math.max(0, this.positionForDate(start));
-    const dayAfterEnd = this.addDays(end, 1);
+    const dayAfterEnd = this.addDays(new Date(`${endDate}T12:00:00`), 1);
     const right = Math.min(this.canvasWidth(), this.positionForDate(dayAfterEnd));
 
     this.hoverPreview.set({
@@ -160,7 +179,11 @@ export class WorkOrderScheduleComponent {
   }
 
   protected createFromKeyboard(workCenterId: string): void {
-    this.openCreate(workCenterId, new Date());
+    const start = new Date();
+    const endDate = this.availableEndDate(workCenterId, start);
+    if (endDate) {
+      this.openCreate(workCenterId, start, endDate);
+    }
   }
 
   protected toggleMenu(event: MouseEvent, orderId: string): void {
@@ -170,6 +193,7 @@ export class WorkOrderScheduleComponent {
 
   protected edit(event: MouseEvent, order: WorkOrderDocument): void {
     event.stopPropagation();
+    this.rememberPanelTrigger();
     this.editingOrder.set(order);
     this.overlapError.set(false);
     this.panelOpen.set(true);
@@ -201,6 +225,10 @@ export class WorkOrderScheduleComponent {
     this.panelOpen.set(false);
     this.editingOrder.set(null);
     this.overlapError.set(false);
+    setTimeout(() => {
+      this.panelTrigger?.focus();
+      this.panelTrigger = null;
+    });
   }
 
   protected formatAccessibleDate(isoDate: string): string {
@@ -209,23 +237,38 @@ export class WorkOrderScheduleComponent {
     );
   }
 
-  private openCreate(workCenterId: string, date: Date): void {
+  protected statusChipVariant(status: WorkOrderDocument['data']['status']): ChipVariant {
+    return status;
+  }
+
+  private openCreate(workCenterId: string, date: Date, endDate: string): void {
+    this.rememberPanelTrigger();
     this.editingOrder.set(null);
     this.initialWorkCenterId.set(workCenterId);
     this.initialStartDate.set(this.toIso(date));
+    this.initialEndDate.set(endDate);
     this.overlapError.set(false);
     this.panelOpen.set(true);
+  }
+
+  private rememberPanelTrigger(): void {
+    const activeElement = document.activeElement;
+    this.panelTrigger = activeElement instanceof HTMLElement ? activeElement : null;
+  }
+
+  private availableEndDate(workCenterId: string, start: Date): string | null {
+    return this.store.availableEndDate(workCenterId, this.toIso(start));
   }
 
   private createTimeline(timescale: Timescale): TimelineConfig {
     const today = this.atNoon(new Date());
 
     if (timescale === 'day') {
-      const start = this.addDays(today, -21);
+      const start = this.addDays(today, -14);
       return {
         start,
         columnWidth: 72,
-        columns: Array.from({ length: 43 }, (_, index) => {
+        columns: Array.from({ length: 29 }, (_, index) => {
           const date = this.addDays(start, index);
           return { date, label: this.format(date, 'day') };
         }),
@@ -244,11 +287,11 @@ export class WorkOrderScheduleComponent {
       };
     }
 
-    const start = new Date(today.getFullYear(), today.getMonth() - 5, 1, 12);
+    const start = new Date(today.getFullYear(), today.getMonth() - 6, 1, 12);
     return {
       start,
       columnWidth: 150,
-      columns: Array.from({ length: 12 }, (_, index) => {
+      columns: Array.from({ length: 13 }, (_, index) => {
         const date = new Date(start.getFullYear(), start.getMonth() + index, 1, 12);
         return { date, label: this.format(date, 'month') };
       }),
@@ -311,6 +354,35 @@ export class WorkOrderScheduleComponent {
   private startOfWeek(date: Date): Date {
     const day = date.getDay() || 7;
     return this.addDays(date, 1 - day);
+  }
+
+  private currentPeriodStart(): Date {
+    const today = this.atNoon(new Date());
+
+    if (this.timescale() === 'week') {
+      return this.startOfWeek(today);
+    }
+
+    if (this.timescale() === 'month') {
+      return new Date(today.getFullYear(), today.getMonth(), 1, 12);
+    }
+
+    return today;
+  }
+
+  private scheduleCenterOnToday(): void {
+    setTimeout(() => this.centerOnToday());
+  }
+
+  private centerOnToday(): void {
+    const viewport = this.timelineViewport?.nativeElement;
+    if (!viewport || viewport.clientWidth === 0) {
+      return;
+    }
+
+    const target = this.positionForDate(new Date()) - viewport.clientWidth / 2;
+    const maximum = Math.max(0, this.canvasWidth() - viewport.clientWidth);
+    viewport.scrollLeft = Math.min(Math.max(0, target), maximum);
   }
 
   private addDays(date: Date, days: number): Date {

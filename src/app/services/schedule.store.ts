@@ -27,6 +27,36 @@ export class ScheduleStore {
     });
   }
 
+  availableEndDate(
+    workCenterId: string,
+    startDate: string,
+    maximumDaysAfterStart = 7,
+  ): string | null {
+    const start = this.toUtcDay(startDate);
+    const maximumEnd = start + maximumDaysAfterStart * 86_400_000;
+    const orders = this.ordersFor(workCenterId);
+
+    if (
+      orders.some((order) => {
+        const existingStart = this.toUtcDay(order.data.startDate);
+        const existingEnd = this.toUtcDay(order.data.endDate);
+        return start >= existingStart && start <= existingEnd;
+      })
+    ) {
+      return null;
+    }
+
+    const nextStart = orders
+      .map((order) => this.toUtcDay(order.data.startDate))
+      .filter((existingStart) => existingStart > start)
+      .sort((first, second) => first - second)[0];
+    const availableEnd = nextStart
+      ? Math.min(maximumEnd, nextStart - 86_400_000)
+      : maximumEnd;
+
+    return new Date(availableEnd).toISOString().slice(0, 10);
+  }
+
   create(draft: WorkOrderDraft): void {
     const order: WorkOrderDocument = {
       docId: crypto.randomUUID(),

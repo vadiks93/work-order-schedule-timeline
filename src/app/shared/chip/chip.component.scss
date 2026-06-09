@@ -1,0 +1,48 @@
+:host {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 17px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+
+  &--timeline {
+    min-height: 22px;
+    padding: 3px 9px;
+    font-size: 11px;
+  }
+
+  &--current {
+    background: var(--color-current-label);
+    color: var(--color-primary);
+  }
+
+  &--open {
+    background: var(--color-status-open-background);
+    color: var(--color-status-open-text);
+  }
+
+  &--in-progress {
+    background: var(--color-status-primary-background);
+    color: var(--color-primary-strong);
+  }
+
+  &--complete {
+    background: var(--color-status-complete-background);
+    color: var(--color-status-complete-text);
+  }
+
+  &--blocked {
+    background: var(--color-status-blocked-background);
+    color: var(--color-status-blocked-text);
+  }
+}

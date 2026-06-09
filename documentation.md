@@ -220,9 +220,9 @@ the written mandatory requirements.
 
 ### Visible ranges
 
-- Day: approximately three weeks before and after today.
+- Day: two weeks before and after today.
 - Week: approximately eight weeks before and after the current week.
-- Month: five months before and six months after the current month.
+- Month: six months before and after the current month.
 
 ### Position calculations
 
@@ -238,9 +238,11 @@ Month view calculates:
 End dates are inclusive. A work-order bar extends to the day following its end date when its
 visual width is calculated.
 
-### Current-date indicator
+### Current-period indicator
 
-A vertical line marks the current date. Its position is recalculated for each timescale.
+A vertical line marks the start of the current day, week, or month. Its label changes with the
+selected timescale. On initial load and after a timescale change, the scroll viewport centers on
+today's actual date.
 
 ## 8. Work Order Bars
 
@@ -269,9 +271,11 @@ The textual status remains visible so status is not communicated through color a
 2. The application converts the selected pixel position into a date.
 3. The details panel opens.
 4. Work center and start date are pre-filled.
-5. End date defaults to seven days after the start date.
-6. Status defaults to Open.
-7. Submit the form using Create.
+5. End date defaults to seven days after the start date when the range is free.
+6. If another order begins inside that range, the end date is shortened to the last available
+   day before that order.
+7. Status defaults to Open.
+8. Submit the form using Create.
 
 The same flow is keyboard-accessible by focusing and activating a row's create control. Keyboard
 creation defaults to the current date because a keyboard event has no horizontal pointer

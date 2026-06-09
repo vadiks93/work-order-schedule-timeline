@@ -38,13 +38,25 @@
         }
       </div>
 
-      <div class="timeline__viewport" tabindex="0" aria-label="Scrollable timeline">
+      <div
+        class="timeline__viewport"
+        #timelineViewport
+        tabindex="0"
+        aria-label="Scrollable timeline"
+      >
         <div class="timeline__canvas" [style.width.px]="canvasWidth()">
           <div
-            class="timeline__today-line"
-            [style.left.px]="todayPosition()"
+            class="timeline__current-period"
+            [style.left.px]="currentPeriodPosition()"
             aria-hidden="true"
           ></div>
+          <app-chip
+            class="timeline__current-period-label"
+            variant="current"
+            [label]="currentPeriodLabel()"
+            [style.left.px]="currentPeriodPosition()"
+            aria-hidden="true"
+          />
 
           <div class="timeline__header">
             @for (column of timeline().columns; track column.date.getTime()) {
@@ -57,17 +69,17 @@
             }
           </div>
 
+          <div class="timeline__background-grid" aria-hidden="true">
+            @for (column of timeline().columns; track column.date.getTime()) {
+              <span
+                class="timeline__background-column"
+                [style.width.px]="timeline().columnWidth"
+              ></span>
+            }
+          </div>
+
           @for (center of store.workCenters(); track center.docId) {
             <div class="timeline__row">
-              <div class="timeline__grid-lines" aria-hidden="true">
-                @for (column of timeline().columns; track column.date.getTime()) {
-                  <span
-                    class="timeline__grid-cell"
-                    [style.width.px]="timeline().columnWidth"
-                  ></span>
-                }
-              </div>
-
               <button
                 class="timeline__create-button"
                 type="button"
@@ -94,6 +106,7 @@
                   class="work-order"
                   [class]="'work-order work-order--' + order.data.status"
                   [ngStyle]="orderStyle(order)"
+                  (dblclick)="edit($event, order)"
                   [attr.aria-label]="
                     order.data.name +
                     ', ' +
@@ -105,7 +118,12 @@
                   "
                 >
                   <span class="work-order__name">{{ order.data.name }}</span>
-                  <span class="work-order__status">{{ statusLabels[order.data.status] }}</span>
+                  <app-chip
+                    class="work-order__status"
+                    size="timeline"
+                    [variant]="statusChipVariant(order.data.status)"
+                    [label]="statusLabels[order.data.status]"
+                  />
                   <button
                     class="work-order__menu-button"
                     type="button"
@@ -113,6 +131,7 @@
                     [attr.aria-controls]="'menu-' + order.docId"
                     [attr.aria-label]="'Actions for ' + order.data.name"
                     (click)="toggleMenu($event, order.docId)"
+                    (dblclick)="$event.stopPropagation()"
                   >
                     <span aria-hidden="true">•••</span>
                   </button>
@@ -123,6 +142,7 @@
                       [id]="'menu-' + order.docId"
                       role="menu"
                       (click)="$event.stopPropagation()"
+                      (dblclick)="$event.stopPropagation()"
                     >
                       <button type="button" role="menuitem" (click)="edit($event, order)">
                         Edit
@@ -154,6 +174,7 @@
     [order]="editingOrder()"
     [initialWorkCenterId]="initialWorkCenterId()"
     [initialStartDate]="initialStartDate()"
+    [initialEndDate]="initialEndDate()"
     [overlapError]="overlapError()"
     (closed)="closePanel()"
     (saved)="save($event)"

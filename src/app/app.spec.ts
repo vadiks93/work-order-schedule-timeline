@@ -29,6 +29,9 @@ describe('App', () => {
     const timescale = compiled.querySelector('.timescale__select .ng-value-label');
 
     expect(timescale?.textContent?.trim()).toBe('Day');
-    expect(compiled.querySelectorAll('.timeline__column-heading')).toHaveLength(43);
+    expect(compiled.querySelectorAll('.timeline__column-heading')).toHaveLength(29);
+    expect(compiled.querySelector('.timeline__current-period-label')?.textContent?.trim()).toBe(
+      'Current day',
+    );
   });
 });

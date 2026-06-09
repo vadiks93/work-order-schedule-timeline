@@ -1,11 +1,15 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   EventEmitter,
+  HostListener,
   Input,
   OnChanges,
   Output,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgbDatepickerModule, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
@@ -17,6 +21,7 @@ import {
   WorkOrderDraft,
   WorkOrderStatus,
 } from '../../models/schedule.models';
+import { ChipComponent, ChipVariant } from '../../shared/chip/chip.component';
 
 interface StatusOption {
   value: WorkOrderStatus;
@@ -25,20 +30,29 @@ interface StatusOption {
 
 @Component({
   selector: 'app-work-order-panel',
-  imports: [ReactiveFormsModule, NgbDatepickerModule, NgSelectModule],
+  imports: [ReactiveFormsModule, NgbDatepickerModule, NgSelectModule, ChipComponent],
   templateUrl: './work-order-panel.component.html',
   styleUrl: './work-order-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WorkOrderPanelComponent implements OnChanges {
+export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
   @Input({ required: true }) workCenters: WorkCenterDocument[] = [];
   @Input() order: WorkOrderDocument | null = null;
   @Input() initialWorkCenterId = '';
   @Input() initialStartDate = '';
+  @Input() initialEndDate = '';
   @Input() overlapError = false;
 
   @Output() readonly closed = new EventEmitter<void>();
   @Output() readonly saved = new EventEmitter<WorkOrderDraft>();
+
+  @ViewChild('workOrderName') workOrderNameRef?: ElementRef<HTMLInputElement>;
+
+  private readonly hostElement: HTMLElement;
+
+  constructor(elementRef: ElementRef<HTMLElement>) {
+    this.hostElement = elementRef.nativeElement;
+  }
 
   readonly statusOptions: StatusOption[] = (
     Object.entries(STATUS_LABELS) as [WorkOrderStatus, string][]
@@ -68,9 +82,62 @@ export class WorkOrderPanelComponent implements OnChanges {
     return !!start && !!end && this.toIso(end) < this.toIso(start);
   }
 
+  get nameErrorVisible(): boolean {
+    return this.form.controls.name.invalid && this.form.controls.name.touched;
+  }
+
+  get startDateErrorVisible(): boolean {
+    return this.form.controls.startDate.invalid && this.form.controls.startDate.touched;
+  }
+
+  get endDateErrorVisible(): boolean {
+    return (
+      this.dateRangeInvalid ||
+      (this.form.controls.endDate.invalid && this.form.controls.endDate.touched)
+    );
+  }
+
+  protected statusChipVariant(status: WorkOrderStatus): ChipVariant {
+    return status;
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['order'] || changes['initialStartDate'] || changes['initialWorkCenterId']) {
+    if (
+      changes['order'] ||
+      changes['initialStartDate'] ||
+      changes['initialEndDate'] ||
+      changes['initialWorkCenterId']
+    ) {
       this.populateForm();
+    }
+  }
+
+  ngAfterViewInit(): void {
+    this.workOrderNameRef?.nativeElement?.focus();
+  }
+
+  @HostListener('keydown', ['$event'])
+  protected keepFocusInDialog(event: KeyboardEvent): void {
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const focusableElements = this.getFocusableElements();
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusableElements[0];
+    const last = focusableElements[focusableElements.length - 1];
+    const activeElement = document.activeElement;
+
+    if (event.shiftKey && activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
@@ -92,7 +159,7 @@ export class WorkOrderPanelComponent implements OnChanges {
 
   private populateForm(): void {
     const startIso = this.order?.data.startDate || this.initialStartDate;
-    const endIso = this.order?.data.endDate || this.addDays(startIso, 7);
+    const endIso = this.order?.data.endDate || this.initialEndDate || this.addDays(startIso, 7);
 
     this.form.reset({
       name: this.order?.data.name ?? '',
@@ -119,5 +186,20 @@ export class WorkOrderPanelComponent implements OnChanges {
     const date = isoDate ? new Date(`${isoDate}T12:00:00`) : new Date();
     date.setDate(date.getDate() + days);
     return date.toISOString().slice(0, 10);
+  }
+
+  private getFocusableElements(): HTMLElement[] {
+    const selector = [
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      'a[href]',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+
+    return Array.from(this.hostElement.querySelectorAll<HTMLElement>(selector)).filter(
+      (element) => element.getClientRects().length > 0 && element.getAttribute('aria-hidden') !== 'true',
+    );
   }
 }

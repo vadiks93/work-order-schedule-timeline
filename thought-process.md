@@ -198,3 +198,144 @@ reproducing full assistant answers.
     **Change:** Reviewed the complete working-tree diff against commit `342aa2a` and summarized
     the responsive layout, semantic shell, timeline interactions, timescale control, menu fix,
     tests, assets, and documentation changes.
+
+32. Can you remove the Angular icon from the browser tab and use a NAOLOGIC icon instead?
+
+    **Change:** Replaced the default Angular favicon reference with a compact NAOLOGIC-blue
+    monogram SVG designed to remain recognizable at browser-tab size.
+
+33. Can the Edit and Delete controls match the dimensions in
+    `Work Order Schedule - Edit and Delete Controls Expanded.png`? The sticky timeline header
+    appears above the menu, and the first-row "Click to add dates" label is also hidden below the
+    date columns.
+
+    **Change:** Matched the action menu to an approximately 200px by 80px mockup footprint with
+    full-width 31px action rows. Added active-row stacking so open menus and hover-preview labels
+    render above the sticky timeline header.
+
+34. The requirement says the timeline should be centered on today with scale-dependent ranges.
+    Can the initial viewport and every timescale change show the current date, and can the marker
+    say "Current day," "Current week," or "Current month" depending on the selected scale?
+
+    **Change:** Added automatic horizontal centering on today's actual date after initial render
+    and timescale changes. Normalized the ranges to plus/minus two weeks, eight weeks, and six
+    months, and replaced the fixed current-date label with a scale-aware current-period marker
+    styled inside the timeline header.
+
+35. Can the current-period label sit below the timeline header like the Default mockup, be a
+    little smaller, and have its vertical line continue down to just above the horizontal
+    scrollbar?
+
+    **Change:** Moved the current-period pill two pixels below the header, reduced its typography
+    and padding, delayed the visible line until beneath the pill, and extended the line to 16px
+    above the viewport bottom so it ends at the horizontal scrollbar.
+
+36. After adjusting the current day, week, and month label, can the vertical line extend fully to
+    the end of the timeline?
+
+    **Change:** Preserved the custom label styling and removed the remaining 16px bottom offset so
+    the current-period line reaches the full timeline canvas bottom.
+
+37. Can repeated color values be grouped into variables declared globally in `styles.scss`?
+
+    **Change:** Added semantic global CSS custom properties for the complete application palette
+    and replaced color literals across the schedule, panel, header, footer, focus, shadow, status,
+    error, and overlay styles.
+
+38. The current day, week, or month marker disappears when hovering the first row. Can it remain
+    visible even if it overlaps slightly?
+
+    **Change:** Raised the current-period marker above active timeline rows so its label and line
+    remain visible during first-row hover.
+
+39. The mockups do not show horizontal separator lines across the timeline canvas. Can those be
+    removed while keeping the separators in the Work Center column?
+
+    **Change:** Removed horizontal borders from timeline rows while preserving the fixed
+    Work Center row separators and vertical date-grid lines.
+
+40. Can the vertical date-grid lines continue to the end of the timeline, stopping where the
+    horizontal scrollbar begins?
+
+    **Change:** Replaced row-level grid fragments with one continuous background grid spanning
+    from beneath the date header to the bottom of the timeline canvas.
+
+41. Can the small gap between the current-period label and its vertical line be filled, and can
+    the line remain above all created work-order bars in every row?
+
+    **Change:** Removed the transparent section at the top of the current-period line and raised
+    the marker layer above all timeline rows, previews, menus, and work-order bars.
+
+42. When selecting a timeline slot, can the default seven-day range remain selectable if a later
+    work order overlaps part of it by filling only the available days before that order?
+
+    **Change:** Added a shared available-range calculation. Creation and hover previews still use
+    the seven-day maximum, but automatically shorten their end date to the day before the next
+    order. Selecting a date already occupied by an order remains unavailable.
+
+43. Can the current day, week, or month label become a reusable chip component, can timeline
+    statuses be larger and easier to read, can Open use the mockup's light-blue color, and can
+    the create/edit status select use the same badges?
+
+    **Change:** Added a reusable standalone chip component with compact and timeline sizes,
+    improved font sizing, and distinct Open, In Progress, Complete, and Blocked
+    colors. Timeline statuses now use the larger size, while the create/edit status select uses
+    the same chips for its selected value and dropdown options.
+
+44. The added text spacing appears to affect more than the status badges, including work-order
+    names. Can it be removed?
+
+    **Change:** Removed chip letter spacing and retained the improved readability through the
+    larger font sizes and status-specific styling.
+
+45. Can the create/edit dialog keep keyboard focus contained after the end-date control, reserve
+    space for validation errors, and connect invalid fields to their messages with
+    `aria-describedby`?
+
+    **Change:** Added keyboard focus wrapping within the dialog, stable error-message slots, and
+    conditional `aria-invalid` and `aria-describedby` relationships for the name and date fields.
+
+46. Can the Open status color match the cyan styling shown in the Options CTA Controls mockup?
+
+    **Change:** Updated the Open chip to cyan text on a pale-cyan background and gave Open
+    work-order bars the matching pale-cyan background and border from the reference.
+
+47. Can the work-order action menu appear above every timeline element, use slightly smaller
+    text, and can double-clicking a work order open it for editing?
+
+    **Change:** Raised a row above the timeline layers only while its action menu is open, raised
+    the menu within that row, reduced work-order, status, and menu text slightly, and added
+    double-click editing without allowing menu interactions to trigger it.
+
+48. Can the current-period vertical line appear underneath existing work orders?
+
+    **Change:** Separated the current-period label from its line so the line renders below
+    work-order bars while the label remains visible above timeline content.
+
+49. Can the current-period line also begin beneath the current day, week, or month label?
+
+    **Change:** Moved the start of the vertical line to the bottom edge of the current-period
+    chip so it no longer runs behind the label.
+
+50. Before committing, can the spacing between fields in the create/edit dialog be reduced?
+
+    **Change:** Tightened the form padding, spacing between fields, and label/control gaps while
+    retaining fixed validation-message space to prevent layout shifts.
+
+51. The fields below an error still move when a validation message appears. Can their positions
+    remain completely stable?
+
+    **Change:** Changed every field's validation area to an equal fixed-height row sized for
+    wrapped messages, preventing errors from changing the position of later modal fields.
+
+52. Can the shadow on the left side of the create/edit panel be reduced to better match the
+    Create New Event mockup?
+
+    **Change:** Reduced the panel shadow's offset, blur, and opacity for a subtler separation from
+    the timeline.
+
+53. Since every modal field is required, should each label use an asterisk or should the form use
+    one simple required-fields message while remaining close to the mockup?
+
+    **Change:** Added one subtle "All fields are required" note beneath the panel description and
+    applied native or ARIA required semantics to every form control without adding label clutter.

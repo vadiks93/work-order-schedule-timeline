@@ -139,15 +139,27 @@
                   @if (openMenuId() === order.docId) {
                     <div
                       class="work-order__menu"
+                      [class.work-order__menu--right]="openMenuDirection() === 'right'"
                       [id]="'menu-' + order.docId"
                       role="menu"
                       (click)="$event.stopPropagation()"
                       (dblclick)="$event.stopPropagation()"
+                      (keydown)="handleMenuKeydown($event)"
                     >
-                      <button type="button" role="menuitem" (click)="edit($event, order)">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        tabindex="-1"
+                        (click)="edit($event, order)"
+                      >
                         Edit
                       </button>
-                      <button type="button" role="menuitem" (click)="delete($event, order)">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        tabindex="-1"
+                        (click)="delete($event, order)"
+                      >
                         Delete
                       </button>
                     </div>

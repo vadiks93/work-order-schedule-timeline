@@ -41,6 +41,8 @@ interface TimescaleOption {
   label: string;
 }
 
+type MenuDirection = 'left' | 'right';
+
 @Component({
   selector: 'app-work-order-schedule',
   imports: [NgStyle, FormsModule, NgSelectModule, WorkOrderPanelComponent, ChipComponent],
@@ -61,6 +63,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   ];
   protected readonly timescale = signal<Timescale>('day');
   protected readonly openMenuId = signal<string | null>(null);
+  protected readonly openMenuDirection = signal<MenuDirection>('left');
   protected readonly panelOpen = signal(false);
   protected readonly editingOrder = signal<WorkOrderDocument | null>(null);
   protected readonly initialWorkCenterId = signal('');
@@ -69,6 +72,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   protected readonly overlapError = signal(false);
   protected readonly hoverPreview = signal<HoverPreview | null>(null);
   private panelTrigger: HTMLElement | null = null;
+  private menuTrigger: HTMLElement | null = null;
 
   protected readonly timeline = computed<TimelineConfig>(() =>
     this.createTimeline(this.timescale()),
@@ -96,14 +100,15 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   protected handleEscape(): void {
     if (this.panelOpen()) {
       this.closePanel();
-    } else {
-      this.openMenuId.set(null);
+    } else if (this.openMenuId()) {
+      this.closeMenuAndRestoreFocus();
     }
   }
 
   @HostListener('document:click')
   protected closeMenu(): void {
     this.openMenuId.set(null);
+    this.menuTrigger = null;
   }
 
   protected setTimescale(value: Timescale | null): void {
@@ -163,7 +168,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
       workCenterId,
       startDate,
       left,
-      width: Math.max(42, right - left),
+      width: Math.max(1, right - left),
     });
   }
 
@@ -188,12 +193,61 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
 
   protected toggleMenu(event: MouseEvent, orderId: string): void {
     event.stopPropagation();
-    this.openMenuId.update((current) => (current === orderId ? null : orderId));
+    if (this.openMenuId() === orderId) {
+      this.openMenuId.set(null);
+      this.menuTrigger = null;
+      return;
+    }
+
+    const button = event.currentTarget as HTMLElement;
+    this.menuTrigger = button;
+    const viewport = this.timelineViewport?.nativeElement;
+    if (viewport) {
+      const buttonRect = button.getBoundingClientRect();
+      const viewportRect = viewport.getBoundingClientRect();
+      this.openMenuDirection.set(
+        viewportRect.right - buttonRect.left >= 200 ? 'right' : 'left',
+      );
+    }
+
+    this.openMenuId.set(orderId);
+    setTimeout(() => this.focusMenuItem(orderId, 0));
+  }
+
+  protected handleMenuKeydown(event: KeyboardEvent): void {
+    const menu = event.currentTarget as HTMLElement;
+    const items = Array.from(menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      items[(currentIndex + 1) % items.length]?.focus();
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      items[(currentIndex - 1 + items.length) % items.length]?.focus();
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      items[0]?.focus();
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      items[items.length - 1]?.focus();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeMenuAndRestoreFocus();
+    } else if (event.key === 'Tab') {
+      event.preventDefault();
+      this.closeMenuAndMoveFocus(event.shiftKey ? -1 : 1);
+    }
   }
 
   protected edit(event: MouseEvent, order: WorkOrderDocument): void {
     event.stopPropagation();
-    this.rememberPanelTrigger();
+    if (this.openMenuId() === order.docId && this.menuTrigger) {
+      this.panelTrigger = this.menuTrigger;
+    } else {
+      this.rememberPanelTrigger();
+    }
     this.editingOrder.set(order);
     this.overlapError.set(false);
     this.panelOpen.set(true);
@@ -202,8 +256,14 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
 
   protected delete(event: MouseEvent, order: WorkOrderDocument): void {
     event.stopPropagation();
+    const deletedWithKeyboard = event.detail === 0;
+    const focusDestination = deletedWithKeyboard ? this.nextWorkOrderControl() : null;
     this.store.delete(order.docId);
     this.openMenuId.set(null);
+    this.menuTrigger = null;
+    if (deletedWithKeyboard) {
+      setTimeout(() => (focusDestination ?? this.timelineViewport?.nativeElement)?.focus());
+    }
   }
 
   protected save(draft: WorkOrderDraft): void {
@@ -254,6 +314,52 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   private rememberPanelTrigger(): void {
     const activeElement = document.activeElement;
     this.panelTrigger = activeElement instanceof HTMLElement ? activeElement : null;
+  }
+
+  private focusMenuItem(orderId: string, index: number): void {
+    const menu = document.getElementById(`menu-${orderId}`);
+    menu?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')[index]?.focus();
+  }
+
+  private closeMenuAndRestoreFocus(): void {
+    const trigger = this.menuTrigger;
+    this.openMenuId.set(null);
+    this.menuTrigger = null;
+    setTimeout(() => trigger?.focus());
+  }
+
+  private closeMenuAndMoveFocus(direction: -1 | 1): void {
+    const trigger = this.menuTrigger;
+    const timeline = this.timelineViewport?.nativeElement;
+    const controls = timeline
+      ? Array.from(
+          timeline.querySelectorAll<HTMLElement>(
+            '.timeline__create-button, .work-order__menu-button',
+          ),
+        )
+      : [];
+    const triggerIndex = trigger ? controls.indexOf(trigger) : -1;
+    const destination =
+      direction === -1
+        ? trigger
+        : controls[triggerIndex + 1] ?? timeline;
+
+    this.openMenuId.set(null);
+    this.menuTrigger = null;
+    setTimeout(() => destination?.focus());
+  }
+
+  private nextWorkOrderControl(): HTMLElement | null {
+    const timeline = this.timelineViewport?.nativeElement;
+    if (!timeline || !this.menuTrigger) {
+      return null;
+    }
+
+    const controls = Array.from(
+      timeline.querySelectorAll<HTMLElement>('.work-order__menu-button'),
+    );
+    const triggerIndex = controls.indexOf(this.menuTrigger);
+    return triggerIndex >= 0 ? controls[triggerIndex + 1] ?? null : null;
   }
 
   private availableEndDate(workCenterId: string, start: Date): string | null {

@@ -12,7 +12,7 @@
     width: calc(100% - (var(--app-gutter) * 2));
     min-width: calc(800px - (var(--app-gutter) * 2));
     margin: 0 auto;
-    padding: clamp(48px, 4.17vw, 72px) 0 44px;
+    padding: clamp(44px, 3.9vw, 66px) 0 40px;
   }
 
   &__skip-link {
@@ -32,8 +32,8 @@
   }
 
   &__title {
-    margin: 0 0 28px;
-    font-size: 26px;
+    margin: 0 0 24px;
+    font-size: 24px;
     font-weight: 600;
     letter-spacing: -0.3px;
   }
@@ -42,14 +42,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 22px;
+    gap: 20px;
+    margin-bottom: 18px;
   }
 
   &__hint {
     margin: 0;
     color: var(--color-muted);
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 
@@ -63,10 +63,10 @@
   &__label {
     display: flex;
     align-items: center;
-    padding: 0 8px;
+    padding: 0 7px;
     background: var(--color-surface-label);
     color: var(--color-muted-strong);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1;
   }
 
@@ -82,13 +82,13 @@
     border: 0;
     border-radius: 0 6px 6px 0;
     color: var(--color-primary-text);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
   }
 
   .timescale__select.ng-select .ng-value-container {
     align-items: center;
-    padding-left: 8px;
+    padding-left: 7px;
   }
 
   .timescale__select.ng-select .ng-arrow-wrapper {
@@ -111,9 +111,9 @@
 
   .timescale__select.ng-select .ng-dropdown-panel .ng-option {
     min-height: 28px;
-    padding: 6px 12px;
+    padding: 5px 10px;
     color: var(--color-control-text);
-    font-size: 13px;
+    font-size: 12px;
     line-height: 16px;
   }
 
@@ -146,7 +146,7 @@
   &__work-center {
     box-sizing: border-box;
     height: var(--timeline-row-height);
-    padding: 0 clamp(20px, 2.08vw, 36px);
+    padding: 0 clamp(18px, 1.82vw, 32px);
     border-bottom: 1px solid var(--color-border-row);
   }
 
@@ -155,14 +155,15 @@
     align-items: center;
     height: var(--timeline-header-height);
     color: var(--color-muted-heading);
-    font-size: 13px;
+    font-size: 12px;
   }
 
   &__work-center {
     display: flex;
     align-items: center;
     color: var(--color-ink-soft);
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 600;
   }
 
   &__viewport {
@@ -197,7 +198,7 @@
     border-right: 1px solid var(--color-border-grid);
     border-bottom: 1px solid var(--color-border-grid);
     color: var(--color-muted-column);
-    font-size: 13px;
+    font-size: 12px;
   }
 
   &__row {
@@ -266,12 +267,12 @@
     position: absolute;
     bottom: calc(100% + 5px);
     left: 50%;
-    padding: 4px 9px;
+    padding: 3px 8px;
     transform: translateX(-50%);
     border-radius: 8px;
     background: var(--color-preview-label);
     color: var(--color-white);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.2;
     white-space: nowrap;
     box-shadow: 0 2px 5px var(--color-preview-shadow);
@@ -303,10 +304,10 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   height: clamp(34px, calc(31px + 0.3906vw), 40px);
   min-width: 42px;
-  padding: 0 8px;
+  padding: 0 7px;
   border: 1px solid;
   border-radius: 8px;
   cursor: default;
@@ -336,7 +337,8 @@
     overflow: hidden;
     flex: 1;
     color: var(--color-ink);
-    font-size: 12px;
+    font-size: 11px;
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -349,11 +351,11 @@
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 27px;
-    height: 25px;
+    width: 23px;
+    height: 23px;
     padding: 0;
     border: 0;
-    border-radius: 5px;
+    border-radius: 4px;
     background: var(--color-menu-button-background);
     color: var(--color-muted-menu);
     font-size: 12px;
@@ -376,21 +378,26 @@
     box-sizing: border-box;
     width: 200px;
     min-height: 80px;
-    padding: 8px 0;
+    padding: 6px 0;
     border: 1px solid var(--color-border-menu);
     border-radius: 5px;
     background: var(--color-white);
     box-shadow: 0 3px 8px var(--color-menu-shadow);
 
+    &--right {
+      right: auto;
+      left: calc(100% - 23px);
+    }
+
     button {
       width: 100%;
-      min-height: 31px;
-      padding: 0 12px;
+      min-height: 29px;
+      padding: 0 10px;
       border: 0;
       background: transparent;
       color: var(--color-primary-action);
       font: inherit;
-      font-size: 13px;
+      font-size: 12px;
       text-align: left;
       cursor: pointer;
 

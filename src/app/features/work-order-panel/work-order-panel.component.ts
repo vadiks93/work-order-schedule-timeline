@@ -12,7 +12,11 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgbDatepickerModule, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
+import {
+  NgbDateParserFormatter,
+  NgbDatepickerModule,
+  NgbDateStruct,
+} from '@ng-bootstrap/ng-bootstrap';
 import { NgSelectModule } from '@ng-select/ng-select';
 import {
   STATUS_LABELS,
@@ -22,6 +26,7 @@ import {
   WorkOrderStatus,
 } from '../../models/schedule.models';
 import { ChipComponent, ChipVariant } from '../../shared/chip/chip.component';
+import { DotDateParserFormatter } from '../../shared/date-format/dot-date-parser-formatter';
 
 interface StatusOption {
   value: WorkOrderStatus;
@@ -31,6 +36,12 @@ interface StatusOption {
 @Component({
   selector: 'app-work-order-panel',
   imports: [ReactiveFormsModule, NgbDatepickerModule, NgSelectModule, ChipComponent],
+  providers: [
+    {
+      provide: NgbDateParserFormatter,
+      useClass: DotDateParserFormatter,
+    },
+  ],
   templateUrl: './work-order-panel.component.html',
   styleUrl: './work-order-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

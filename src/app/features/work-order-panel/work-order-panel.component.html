@@ -90,11 +90,7 @@
           />
         </ng-template>
         <ng-template ng-option-tmp let-item="item">
-          <app-chip
-            size="timeline"
-            [variant]="statusChipVariant(item.value)"
-            [label]="item.label"
-          />
+          {{ item.label }}
         </ng-template>
       </ng-select>
       <div class="form-field__error-slot"></div>
@@ -106,7 +102,7 @@
         <input
           class="form-field__control"
           id="start-date"
-          placeholder="yyyy-mm-dd"
+          placeholder="dd.mm.yyyy"
           formControlName="startDate"
           ngbDatepicker
           #startPicker="ngbDatepicker"
@@ -136,7 +132,7 @@
         <input
           class="form-field__control"
           id="end-date"
-          placeholder="yyyy-mm-dd"
+          placeholder="dd.mm.yyyy"
           formControlName="endDate"
           ngbDatepicker
           #endPicker="ngbDatepicker"

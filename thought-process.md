@@ -339,3 +339,62 @@ reproducing full assistant answers.
 
     **Change:** Added one subtle "All fields are required" note beneath the panel description and
     applied native or ARIA required semantics to every form control without adding label clutter.
+
+54. The Edit/Delete menu is clipped behind the fixed Work Center column when opened from a short
+    work order near the left edge. Can it remain fully visible?
+
+    **Change:** Made the action menu choose its opening direction from the available timeline
+    viewport space, opening to the right near the left edge and to the left near the right edge.
+
+55. Can the Edit/Delete menu support arrow-key selection, close when tabbing away, and return
+    focus to the current work order's three-dot button when Escape is pressed?
+
+    **Change:** Added managed menu focus with Up/Down and Home/End navigation, Tab dismissal with
+    continued timeline focus movement, and Escape dismissal that restores focus to the trigger.
+
+56. When deleting with the keyboard, can focus move to the next work order, or to the timeline if
+    there is no next work order?
+
+    **Change:** Keyboard deletion now captures the next work-order action before removal and
+    focuses it afterward, falling back to the timeline viewport. Mouse deletion remains unchanged.
+
+57. In Week and Month views, why does a new-order hover preview overlap a nearby existing order
+    when the available gap is small?
+
+    **Change:** Removed the 42px minimum visual width from creation previews. Narrow valid ranges
+    now use their true timeline width and stop precisely before the next existing order.
+
+58. Can the overall interface use slightly smaller typography and tighter spacing, while leaving
+    chip sizes unchanged and giving Work Center names a modestly stronger weight?
+
+    **Change:** Applied a restrained density pass across the page, timeline controls, work orders,
+    menus, and panel. Chips remain unchanged, row heights stay responsive, and Work Center names
+    now use the medium font weight.
+
+59. Can work-order names displayed inside timeline bars also be slightly bolder?
+
+    **Change:** Applied the medium font weight to timeline work-order names without changing
+    status chips or other timeline labels.
+
+60. In the create/edit status dropdown, can options display as plain text while the selected
+    status remains a badge?
+
+    **Change:** Kept the selected status rendered with the shared chip component and changed the
+    dropdown option list to plain text for closer mockup alignment.
+
+61. Can the plain status options be slightly larger, prevent the selected Open option from
+    appearing blue, and ensure text does not inherit extra letter spacing?
+
+    **Change:** Increased status option text to 13px, normalized selected and hovered option
+    colors, and explicitly reset letter spacing on page controls and dropdown options.
+
+62. Can the create/edit form display and accept dates using the mockup's `dd.mm.yyyy` format?
+
+    **Change:** Added an ng-bootstrap date parser/formatter for `dd.mm.yyyy` display and input,
+    while preserving ISO `yyyy-mm-dd` values for storage and timeline calculations.
+
+63. Can the space between a status and its three-dot action be reduced, and can the action control
+    use less padding to better match the mockups and fit Week/Month bars?
+
+    **Change:** Reduced the work-order content gap and made the three-dot control smaller, while
+    updating the right-opening menu anchor to remain aligned with the compact control.

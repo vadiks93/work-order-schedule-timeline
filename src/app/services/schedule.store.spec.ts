@@ -41,7 +41,7 @@ describe('ScheduleStore', () => {
   it('returns the full default range when no later order blocks it', () => {
     store.workOrders.set([]);
 
-    expect(store.availableEndDate('wc-genesis', '2030-01-01')).toBe('2030-01-08');
+    expect(store.availableEndDate('wc-genesis', '2030-01-01')).toBe('2030-01-07');
   });
 
   it('shortens the default range to the day before the next order', () => {
@@ -115,5 +115,16 @@ describe('ScheduleStore', () => {
 
     const snapshot = JSON.parse(localStorage.getItem('work-order-schedule-timeline')!);
     expect(snapshot.workOrders.at(-1).data.name).toBe('Persisted order');
+  });
+
+  it('can clear all work orders and persist the empty schedule', async () => {
+    expect(store.orderCount()).toBeGreaterThan(0);
+
+    store.clearWorkOrders();
+    await Promise.resolve();
+
+    const snapshot = JSON.parse(localStorage.getItem('work-order-schedule-timeline')!);
+    expect(store.orderCount()).toBe(0);
+    expect(snapshot.workOrders).toEqual([]);
   });
 });

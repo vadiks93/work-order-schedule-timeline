@@ -49,6 +49,16 @@ export class ScheduleApiService {
     });
   }
 
+  async clearWorkOrders(): Promise<void> {
+    return this.withMockLatency(() => {
+      const snapshot = this.readSnapshot();
+      this.writeSnapshot({
+        ...snapshot,
+        workOrders: [],
+      });
+    });
+  }
+
   private readSnapshot(): ScheduleSnapshot {
     const storedSnapshot = this.readStoredSnapshot();
     if (storedSnapshot) {

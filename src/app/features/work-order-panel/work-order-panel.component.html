@@ -53,22 +53,6 @@
     </div>
 
     <div class="form-field">
-      <label class="form-field__label" for="work-center">Work Center</label>
-      <ng-select
-        inputId="work-center"
-        formControlName="workCenterId"
-        [clearable]="false"
-        [searchable]="false"
-        bindLabel="data.name"
-        bindValue="docId"
-        [items]="workCenters"
-        aria-label="Work center"
-        aria-required="true"
-      />
-      <div class="form-field__error-slot"></div>
-    </div>
-
-    <div class="form-field">
       <label class="form-field__label" for="work-order-status">Status</label>
       <ng-select
         class="form-field__status-select"

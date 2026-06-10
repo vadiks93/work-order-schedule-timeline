@@ -203,7 +203,6 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
   private focusFirstInvalidControl(): void {
     const controlIds = [
       { control: this.form.controls.name, id: 'work-order-name' },
-      { control: this.form.controls.workCenterId, id: 'work-center' },
       { control: this.form.controls.status, id: 'work-order-status' },
       { control: this.form.controls.startDate, id: 'start-date' },
       { control: this.form.controls.endDate, id: 'end-date', invalid: this.dateRangeInvalid },

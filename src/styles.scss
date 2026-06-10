@@ -115,6 +115,15 @@ body {
   letter-spacing: normal;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 @media (min-width: 1800px) {
   html {
     font-size: clamp(16px, .9vw, 19px);
@@ -141,6 +150,86 @@ textarea {
   background: currentColor;
   box-shadow: -5px 0 currentColor, 5px 0 currentColor;
   font-size: 0;
+}
+
+.work-order--tiny .work-order__content {
+  visibility: hidden;
+}
+
+.schedule__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule__toolbar-button {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--color-surface-label);
+  color: var(--color-muted-strong);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  box-shadow: 0 1px 3px var(--color-toolbar-shadow);
+  cursor: pointer;
+}
+
+.schedule__toolbar-button:is(:hover, :focus-visible) {
+  color: var(--color-primary-action);
+}
+
+.schedule__toolbar-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.timeline__row {
+  cursor:
+    url('/pointing-cursor.svg') 9 8,
+    pointer;
+}
+
+.schedule__help {
+  position: relative;
+}
+
+.schedule__help-button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--color-border-control);
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--color-white), var(--color-surface-label));
+  color: var(--color-primary-text);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 1px 3px var(--color-toolbar-shadow);
+  cursor: help;
+}
+
+.schedule__help-button:is(:hover, :focus-visible) {
+  border-color: var(--color-primary);
+  color: var(--color-primary-action);
+}
+
+.schedule__help app-floating-label {
+  top: 50%;
+  right: calc(100% + 8px);
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%);
+}
+
+.schedule__help .floating-label {
+  width: 250px;
+  white-space: normal;
+}
+
+.schedule__help:is(:hover, :focus-within) .floating-label--tooltip {
+  opacity: 1;
 }
 
 .timeline .timeline__row:has(.work-order__menu) {

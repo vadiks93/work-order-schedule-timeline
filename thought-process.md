@@ -622,3 +622,65 @@ reproducing full assistant answers.
      **Change:** Added an active preview timeline state, raised the previewing row above neighboring
      rows, suppressed hover styling on non-preview rows while previewing, and allowed the preview
      itself to catch pointer events instead of letting the browser hover through it.
+
+101. Is the default new work-order selection using eight displayed days instead of seven?
+
+     **Change:** Corrected the default creation range to seven inclusive calendar days. A start
+     date of January 1 now defaults to an end date of January 7, while overlap-shortening behavior
+     still stops the range on the day before the next existing order.
+
+102. Can keyboard navigation be enhanced so arrow keys move an add-date selection across days and
+     work-center rows while preserving Tab and Shift+Tab navigation?
+
+     **Change:** Added arrow-key navigation for focused timeline create targets. ArrowRight and
+     ArrowLeft move the proposed creation range by one day, starting from the visible timeline
+     area with a seven-day edge offset. ArrowUp and ArrowDown move the same proposed start date
+     between work centers. Each move reuses the existing available-range logic, skipping occupied
+     starts and shortening the range before the next conflicting work order.
+
+103. Can the create hover effect keep a fixed mockup-like width, focus the new work order's
+     action button after keyboard creation, and move the timeline instructions into a help
+     tooltip?
+
+     **Change:** Separated the visual create-preview width from the real date range so the hover
+     block stays a fixed design-sized width while the form still receives the actual seven-day or
+     conflict-shortened range. Keyboard-created work orders now return focus to their three-dot
+     action button after save. The visible instruction text was replaced by a question-mark help
+     control using the shared floating-label tooltip, while full keyboard and mouse instructions
+     remain available through screen-reader text.
+
+104. Can keyboard focus move spatially between arrow-selected create previews and existing work
+     orders?
+
+     **Change:** Added keyboard handoff rules between create previews and work-order action
+     buttons. When a keyboard preview is active, Tab moves to the nearest following work order or
+     next row, and Shift+Tab moves to the nearest previous work order or previous row. From an
+     existing work-order action, arrow keys return focus to the row create target and open a
+     preview before, after, or on the adjacent work-center row.
+
+105. Can a Clear Work Orders button be added next to the timescale control for testing?
+
+     **Change:** Added a compact toolbar button matching the timescale control height. It clears
+     all current work orders, resets transient timeline interaction state, and persists the empty
+     schedule through the mocked localStorage-backed API.
+
+106. Can the Work Center dropdown be removed from the create/edit modal because it is not shown
+     in the mockup?
+
+     **Change:** Removed the visible Work Center selector from the modal while keeping the
+     selected work center in form state from the clicked or keyboard-selected timeline row. Invalid
+     form focus now skips the hidden work-center control.
+
+107. Can the timeline extend when scrolling or arrow-navigating so it is possible to explore a
+     wider time range?
+
+     **Change:** Added delayed timeline expansion near the horizontal scroll edges and when
+     keyboard preview navigation moves beyond the current canvas. The timeline now appends extra
+     day, week, or month columns after roughly half a second, preserving scroll position when
+     expanding to the left.
+
+108. Can a button scroll back to the current date, and can dynamic timeline expansion wait longer?
+
+     **Change:** Added a compact Today toolbar button that resets expanded timeline range and
+     recenters the viewport on the current day, week, or month. Increased the dynamic horizontal
+     expansion delay to two seconds so the timeline expands less eagerly while scrolling.

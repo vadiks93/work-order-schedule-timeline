@@ -73,12 +73,12 @@ $font-size-compact: 0.6875rem;
     background: var(--color-surface-label);
     color: var(--color-muted-strong);
     font-size: $font-size-compact;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1;
   }
 
   &__select {
-    width: 74px;
+    width: clamp(78px, 5vw, 92px);
   }
 }
 
@@ -90,7 +90,7 @@ $font-size-compact: 0.6875rem;
     border-radius: 0 6px 6px 0;
     color: var(--color-primary-text);
     font-size: $font-size-compact;
-    font-weight: 700;
+    font-weight: 500;
   }
 
   .timescale__select.ng-select .ng-value-container {
@@ -133,7 +133,7 @@ $font-size-compact: 0.6875rem;
     padding: 5px 10px;
     color: var(--color-control-text);
     font-size: $font-size-compact;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 16px;
   }
 

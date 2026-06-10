@@ -33,6 +33,7 @@ interface TimelineConfig {
 interface HoverPreview {
   workCenterId: string;
   startDate: string;
+  endDate: string;
   left: number;
   width: number;
 }
@@ -40,6 +41,11 @@ interface HoverPreview {
 interface TimescaleOption {
   value: Timescale;
   label: string;
+}
+
+interface TimelineExtension {
+  before: number;
+  after: number;
 }
 
 type MenuDirection = 'left' | 'right';
@@ -59,7 +65,10 @@ type MenuDirection = 'left' | 'right';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorkOrderScheduleComponent implements AfterViewInit {
+  private readonly createPreviewWidth = 100;
   private readonly menuWidth = 160;
+  private readonly expandDelay = 1000;
+  private readonly expandThreshold = 180;
 
   @ViewChild('timelineViewport')
   private timelineViewport?: ElementRef<HTMLDivElement>;
@@ -82,11 +91,15 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   protected readonly overlapError = signal(false);
   protected readonly hoverPreview = signal<HoverPreview | null>(null);
   protected readonly selectedWorkCenterId = signal<string | null>(null);
+  private readonly timelineExtension = signal<TimelineExtension>({ before: 0, after: 0 });
   private panelTrigger: HTMLElement | null = null;
   private menuTrigger: HTMLElement | null = null;
+  private focusCreatedOrderAction = false;
+  private expandTimer: ReturnType<typeof setTimeout> | null = null;
+  private afterExpand: (() => void) | null = null;
 
   protected readonly timeline = computed<TimelineConfig>(() =>
-    this.createTimeline(this.timescale()),
+    this.createTimeline(this.timescale(), this.timelineExtension()),
   );
   protected readonly canvasWidth = computed(
     () => this.timeline().columns.length * this.timeline().columnWidth,
@@ -128,6 +141,20 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     }
     this.timescale.set(value);
     this.hoverPreview.set(null);
+    this.resetTimelineExpansion();
+    this.scheduleCenterOnToday();
+  }
+
+  protected clearWorkOrders(): void {
+    this.hoverPreview.set(null);
+    this.openMenuId.set(null);
+    this.menuTrigger = null;
+    this.selectedWorkCenterId.set(null);
+    this.store.clearWorkOrders();
+  }
+
+  protected scrollToCurrentDate(): void {
+    this.hoverPreview.set(null);
     this.scheduleCenterOnToday();
   }
 
@@ -146,6 +173,10 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   protected shouldShowTooltip(order: WorkOrderDocument): boolean {
     const { width } = this.orderPosition(order);
     return width < 150 || this.isNameLikelyClipped(order, width);
+  }
+
+  protected isTinyOrder(order: WorkOrderDocument): boolean {
+    return this.orderPosition(order).width < 36;
   }
 
   protected tooltipText(order: WorkOrderDocument): string {
@@ -201,14 +232,14 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     }
 
     const left = Math.max(0, this.positionForDate(start));
-    const dayAfterEnd = this.addDays(new Date(`${endDate}T12:00:00`), 1);
-    const right = Math.min(this.canvasWidth(), this.positionForDate(dayAfterEnd));
+    const frame = this.previewVisualFrame(workCenterId, start, left);
 
     this.hoverPreview.set({
       workCenterId,
       startDate,
-      left,
-      width: Math.max(1, right - left),
+      endDate,
+      left: frame.left,
+      width: frame.width,
     });
   }
 
@@ -216,9 +247,22 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     this.hoverPreview.set(null);
   }
 
+  protected handleTimelineScroll(): void {
+    const viewport = this.timelineViewport?.nativeElement;
+    if (!viewport || viewport.scrollWidth <= viewport.clientWidth) {
+      return;
+    }
+
+    if (viewport.scrollLeft <= this.expandThreshold) {
+      this.queueTimelineExpansion(-1);
+    } else if (viewport.scrollLeft + viewport.clientWidth >= viewport.scrollWidth - this.expandThreshold) {
+      this.queueTimelineExpansion(1);
+    }
+  }
+
   protected previewStyle(preview: HoverPreview): Record<string, string> {
     return {
-      left: `${preview.left}px`,
+      left: `${this.clampedPreviewLeft(preview)}px`,
       width: `${preview.width}px`,
     };
   }
@@ -227,7 +271,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     const start = new Date();
     const endDate = this.availableEndDate(workCenterId, start);
     if (endDate) {
-      this.openCreate(workCenterId, start, endDate);
+      this.openCreate(workCenterId, start, endDate, true);
     }
   }
 
@@ -237,7 +281,77 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     }
 
     event.stopPropagation();
+    const preview = this.hoverPreview();
+    if (preview?.workCenterId === workCenterId) {
+      this.openCreate(
+        workCenterId,
+        new Date(`${preview.startDate}T12:00:00`),
+        preview.endDate,
+        true,
+      );
+      return;
+    }
+
     this.createFromKeyboard(workCenterId);
+  }
+
+  protected handleCreateButtonKeydown(event: KeyboardEvent, workCenterId: string): void {
+    if (event.key === 'Tab' && this.hoverPreview()?.workCenterId === workCenterId) {
+      this.moveFocusFromKeyboardPreview(event, workCenterId);
+      return;
+    }
+
+    if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.openMenuId.set(null);
+
+    if (event.key === 'ArrowRight') {
+      this.moveKeyboardPreview(workCenterId, 1);
+    } else if (event.key === 'ArrowLeft') {
+      this.moveKeyboardPreview(workCenterId, -1);
+    } else {
+      this.moveKeyboardPreviewToRow(workCenterId, event.key === 'ArrowDown' ? 1 : -1);
+    }
+  }
+
+  protected handleWorkOrderActionKeydown(
+    event: KeyboardEvent,
+    order: WorkOrderDocument,
+  ): void {
+    if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.openMenuId.set(null);
+    this.menuTrigger = null;
+
+    if (event.key === 'ArrowRight') {
+      this.focusCreateButtonByWorkCenterId(order.data.workCenterId);
+      this.applyKeyboardPreview(
+        order.data.workCenterId,
+        this.addDays(new Date(`${order.data.endDate}T12:00:00`), 1),
+        1,
+      );
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      this.focusCreateButtonByWorkCenterId(order.data.workCenterId);
+      this.applyKeyboardPreview(
+        order.data.workCenterId,
+        this.addDays(new Date(`${order.data.startDate}T12:00:00`), -1),
+        -1,
+      );
+      return;
+    }
+
+    this.movePreviewFromOrderToRow(order, event.key === 'ArrowDown' ? 1 : -1);
   }
 
   protected toggleMenu(event: MouseEvent, orderId: string): void {
@@ -327,16 +441,29 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     if (editingId) {
       this.store.update(editingId, draft);
     } else {
-      this.store.create(draft);
+      const createdOrder = this.store.create(draft);
+      if (this.focusCreatedOrderAction) {
+        this.hoverPreview.set(null);
+        this.focusCreatedOrderAction = false;
+        this.closePanel(false);
+        setTimeout(() => this.focusWorkOrderAction(createdOrder.docId));
+        return;
+      }
     }
     this.closePanel();
   }
 
-  protected closePanel(): void {
+  protected closePanel(restoreFocus = true): void {
     this.panelOpen.set(false);
     this.editingOrder.set(null);
     this.overlapError.set(false);
     this.selectedWorkCenterId.set(null);
+    this.hoverPreview.set(null);
+    this.focusCreatedOrderAction = false;
+    if (!restoreFocus) {
+      this.panelTrigger = null;
+      return;
+    }
     setTimeout(() => {
       this.panelTrigger?.focus();
       this.panelTrigger = null;
@@ -353,7 +480,12 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     return status;
   }
 
-  private openCreate(workCenterId: string, date: Date, endDate: string): void {
+  private openCreate(
+    workCenterId: string,
+    date: Date,
+    endDate: string,
+    focusCreatedAction = false,
+  ): void {
     this.rememberPanelTrigger();
     this.editingOrder.set(null);
     this.initialWorkCenterId.set(workCenterId);
@@ -361,6 +493,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     this.initialStartDate.set(this.toIso(date));
     this.initialEndDate.set(endDate);
     this.overlapError.set(false);
+    this.focusCreatedOrderAction = focusCreatedAction;
     this.panelOpen.set(true);
   }
 
@@ -402,6 +535,62 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     setTimeout(() => destination?.focus());
   }
 
+  private moveFocusFromKeyboardPreview(
+    event: KeyboardEvent,
+    workCenterId: string,
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const preview = this.hoverPreview();
+    if (!preview) {
+      return;
+    }
+
+    const destination = event.shiftKey
+      ? this.previousOrderAction(preview) ?? this.adjacentCreateButton(workCenterId, -1)
+      : this.nextOrderAction(preview) ?? this.adjacentCreateButton(workCenterId, 1);
+
+    this.hoverPreview.set(null);
+    setTimeout(() => (destination ?? this.timelineViewport?.nativeElement)?.focus());
+  }
+
+  private previousOrderAction(preview: HoverPreview): HTMLElement | null {
+    const previewStart = new Date(`${preview.startDate}T12:00:00`);
+    const previousOrder = this.store
+      .ordersFor(preview.workCenterId)
+      .filter((order) => new Date(`${order.data.endDate}T12:00:00`) < previewStart)
+      .sort(
+        (first, second) =>
+          new Date(`${second.data.endDate}T12:00:00`).getTime() -
+          new Date(`${first.data.endDate}T12:00:00`).getTime(),
+      )[0];
+
+    return previousOrder ? this.workOrderAction(previousOrder.docId) : null;
+  }
+
+  private nextOrderAction(preview: HoverPreview): HTMLElement | null {
+    const previewEnd = new Date(`${preview.endDate}T12:00:00`);
+    const nextOrder = this.store
+      .ordersFor(preview.workCenterId)
+      .filter((order) => new Date(`${order.data.startDate}T12:00:00`) > previewEnd)
+      .sort(
+        (first, second) =>
+          new Date(`${first.data.startDate}T12:00:00`).getTime() -
+          new Date(`${second.data.startDate}T12:00:00`).getTime(),
+      )[0];
+
+    return nextOrder ? this.workOrderAction(nextOrder.docId) : null;
+  }
+
+  private adjacentCreateButton(workCenterId: string, direction: -1 | 1): HTMLElement | null {
+    const currentIndex = this.store
+      .workCenters()
+      .findIndex((center) => center.docId === workCenterId);
+
+    return this.createButtonAt(currentIndex + direction);
+  }
+
   private nextWorkOrderControl(): HTMLElement | null {
     const timeline = this.timelineViewport?.nativeElement;
     if (!timeline || !this.menuTrigger) {
@@ -419,15 +608,305 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     return this.store.availableEndDate(workCenterId, this.toIso(start));
   }
 
-  private createTimeline(timescale: Timescale): TimelineConfig {
+  private moveKeyboardPreview(workCenterId: string, direction: -1 | 1): void {
+    const current = this.hoverPreview();
+    const start =
+      current?.workCenterId === workCenterId
+        ? this.addDays(new Date(`${current.startDate}T12:00:00`), direction)
+        : this.initialKeyboardPreviewDate(direction);
+
+    this.applyKeyboardPreview(workCenterId, start, direction);
+  }
+
+  private moveKeyboardPreviewToRow(
+    workCenterId: string,
+    direction: -1 | 1,
+    preserveDate = true,
+  ): void {
+    const workCenters = this.store.workCenters();
+    const currentIndex = workCenters.findIndex((center) => center.docId === workCenterId);
+    const nextCenter = workCenters[currentIndex + direction];
+
+    if (!nextCenter) {
+      return;
+    }
+
+    this.focusCreateButton(currentIndex + direction);
+
+    const current = this.hoverPreview();
+    const start =
+      preserveDate && current?.workCenterId === workCenterId
+        ? new Date(`${current.startDate}T12:00:00`)
+        : this.initialKeyboardPreviewDate(direction);
+
+    this.applyKeyboardPreview(nextCenter.docId, start, direction);
+  }
+
+  private applyKeyboardPreview(workCenterId: string, start: Date, direction: -1 | 1): void {
+    if (this.isOutsideTimeline(start, direction)) {
+      this.queueTimelineExpansion(direction, () =>
+        this.applyKeyboardPreview(workCenterId, start, direction),
+      );
+      return;
+    }
+
+    const preview = this.createPreview(workCenterId, start, direction);
+    if (!preview) {
+      this.moveKeyboardPreviewToRow(workCenterId, direction, false);
+      return;
+    }
+
+    this.hoverPreview.set(preview);
+    this.scrollPreviewIntoView(preview);
+  }
+
+  private createPreview(
+    workCenterId: string,
+    start: Date,
+    direction: -1 | 1,
+  ): HoverPreview | null {
+    const availableStart = this.firstAvailableStart(workCenterId, start, direction);
+    if (!availableStart) {
+      return null;
+    }
+
+    const endDate = this.availableEndDate(workCenterId, availableStart);
+    if (!endDate) {
+      return null;
+    }
+
+    const left = Math.max(0, this.positionForDate(availableStart));
+    const frame = this.previewVisualFrame(workCenterId, availableStart, left);
+
+    return {
+      workCenterId,
+      startDate: this.toIso(availableStart),
+      endDate,
+      left: frame.left,
+      width: frame.width,
+    };
+  }
+
+  private firstAvailableStart(
+    workCenterId: string,
+    start: Date,
+    direction: -1 | 1,
+  ): Date | null {
+    const canvasEnd = this.dateAtPosition(this.canvasWidth());
+    let candidate = this.clampDateToCanvas(start);
+
+    while (candidate >= this.timeline().start && candidate <= canvasEnd) {
+      if (this.availableEndDate(workCenterId, candidate)) {
+        return candidate;
+      }
+
+      candidate = this.addDays(candidate, direction);
+    }
+
+    return null;
+  }
+
+  private initialKeyboardPreviewDate(direction: -1 | 1): Date {
+    const viewport = this.timelineViewport?.nativeElement;
+    if (!viewport) {
+      return direction === 1 ? this.timeline().start : this.dateAtPosition(this.canvasWidth());
+    }
+
+    const horizontalOffset = direction === 1
+      ? viewport.scrollLeft
+      : viewport.scrollLeft + viewport.clientWidth;
+    return this.addDays(this.dateAtPosition(horizontalOffset), direction * 7);
+  }
+
+  private scrollPreviewIntoView(preview: HoverPreview): void {
+    const viewport = this.timelineViewport?.nativeElement;
+    if (!viewport) {
+      return;
+    }
+
+    const previewRight = preview.left + preview.width;
+    const viewportRight = viewport.scrollLeft + viewport.clientWidth;
+
+    if (preview.left < viewport.scrollLeft) {
+      viewport.scrollLeft = preview.left;
+    } else if (previewRight > viewportRight) {
+      viewport.scrollLeft = previewRight - viewport.clientWidth;
+    }
+  }
+
+  private focusCreateButton(index: number): void {
+    setTimeout(() => this.createButtonAt(index)?.focus());
+  }
+
+  private focusCreateButtonByWorkCenterId(workCenterId: string): void {
+    const index = this.store
+      .workCenters()
+      .findIndex((center) => center.docId === workCenterId);
+
+    this.focusCreateButton(index);
+  }
+
+  private createButtonAt(index: number): HTMLElement | null {
+    const buttons = this.timelineViewport?.nativeElement.querySelectorAll<HTMLElement>(
+      '.timeline__create-button',
+    );
+    return buttons?.[index] ?? null;
+  }
+
+  private focusWorkOrderAction(orderId: string): void {
+    this.workOrderAction(orderId)?.focus();
+  }
+
+  private workOrderAction(orderId: string): HTMLElement | null {
+    return (
+      this.timelineViewport?.nativeElement.querySelector<HTMLElement>(
+        `[data-order-id="${orderId}"]`,
+      ) ?? null
+    );
+  }
+
+  private movePreviewFromOrderToRow(order: WorkOrderDocument, direction: -1 | 1): void {
+    const workCenters = this.store.workCenters();
+    const currentIndex = workCenters.findIndex(
+      (center) => center.docId === order.data.workCenterId,
+    );
+    const nextCenter = workCenters[currentIndex + direction];
+
+    if (!nextCenter) {
+      return;
+    }
+
+    this.focusCreateButton(currentIndex + direction);
+    this.applyKeyboardPreview(
+      nextCenter.docId,
+      new Date(`${order.data.startDate}T12:00:00`),
+      1,
+    );
+  }
+
+  private clampDateToCanvas(date: Date): Date {
+    const canvasEnd = this.dateAtPosition(this.canvasWidth());
+    if (date < this.timeline().start) {
+      return this.timeline().start;
+    }
+
+    if (date > canvasEnd) {
+      return canvasEnd;
+    }
+
+    return this.atNoon(date);
+  }
+
+  private isOutsideTimeline(date: Date, direction: -1 | 1): boolean {
+    const position = this.positionForDate(date);
+    return direction === -1 ? position < 0 : position >= this.canvasWidth();
+  }
+
+  private queueTimelineExpansion(direction: -1 | 1, afterExpand?: () => void): void {
+    this.afterExpand = afterExpand ?? null;
+    if (this.expandTimer) {
+      return;
+    }
+
+    this.expandTimer = setTimeout(() => {
+      this.expandTimer = null;
+      this.expandTimeline(direction);
+      const action = this.afterExpand;
+      this.afterExpand = null;
+      if (action) {
+        setTimeout(action);
+      }
+    }, this.expandDelay);
+  }
+
+  private expandTimeline(direction: -1 | 1): void {
+    const viewport = this.timelineViewport?.nativeElement;
+    const addedColumns = this.expansionColumnCount();
+    const addedWidth = addedColumns * this.timeline().columnWidth;
+
+    this.timelineExtension.update((extension) =>
+      direction === -1
+        ? { ...extension, before: extension.before + addedColumns }
+        : { ...extension, after: extension.after + addedColumns },
+    );
+
+    if (direction === -1 && viewport) {
+      setTimeout(() => {
+        viewport.scrollLeft += addedWidth;
+      });
+    }
+  }
+
+  private expansionColumnCount(): number {
+    const columnsByScale: Record<Timescale, number> = {
+      day: 14,
+      week: 4,
+      month: 3,
+    };
+    return columnsByScale[this.timescale()];
+  }
+
+  private resetTimelineExpansion(): void {
+    if (this.expandTimer) {
+      clearTimeout(this.expandTimer);
+      this.expandTimer = null;
+    }
+    this.afterExpand = null;
+    this.timelineExtension.set({ before: 0, after: 0 });
+  }
+
+  private clampedPreviewLeft(preview: HoverPreview): number {
+    return Math.max(0, Math.min(preview.left, this.canvasWidth() - preview.width));
+  }
+
+  private previewVisualFrame(
+    workCenterId: string,
+    start: Date,
+    desiredLeft: number,
+  ): { left: number; width: number } {
+    const bounds = this.availableSlotBounds(workCenterId, start);
+    const slotWidth = Math.max(1, bounds.end - bounds.start);
+    const width = Math.min(this.createPreviewWidth, slotWidth);
+    const left = Math.min(Math.max(desiredLeft, bounds.start), bounds.end - width);
+
+    return { left, width };
+  }
+
+  private availableSlotBounds(workCenterId: string, start: Date): { start: number; end: number } {
+    return this.store.ordersFor(workCenterId).reduce(
+      (bounds, order) => {
+        const orderStart = new Date(`${order.data.startDate}T12:00:00`);
+        const orderEnd = this.addDays(new Date(`${order.data.endDate}T12:00:00`), 1);
+
+        if (orderEnd <= start) {
+          return {
+            ...bounds,
+            start: Math.max(bounds.start, this.positionForDate(orderEnd)),
+          };
+        }
+
+        if (orderStart > start) {
+          return {
+            ...bounds,
+            end: Math.min(bounds.end, this.positionForDate(orderStart)),
+          };
+        }
+
+        return bounds;
+      },
+      { start: 0, end: this.canvasWidth() },
+    );
+  }
+
+  private createTimeline(timescale: Timescale, extension: TimelineExtension): TimelineConfig {
     const today = this.atNoon(new Date());
 
     if (timescale === 'day') {
-      const start = this.addDays(today, -14);
+      const start = this.addDays(today, -14 - extension.before);
       return {
         start,
         columnWidth: 72,
-        columns: Array.from({ length: 29 }, (_, index) => {
+        columns: Array.from({ length: 29 + extension.before + extension.after }, (_, index) => {
           const date = this.addDays(start, index);
           return { date, label: this.format(date, 'day') };
         }),
@@ -435,22 +914,22 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     }
 
     if (timescale === 'week') {
-      const start = this.startOfWeek(this.addDays(today, -56));
+      const start = this.startOfWeek(this.addDays(today, -56 - extension.before * 7));
       return {
         start,
         columnWidth: 124,
-        columns: Array.from({ length: 17 }, (_, index) => {
+        columns: Array.from({ length: 17 + extension.before + extension.after }, (_, index) => {
           const date = this.addDays(start, index * 7);
           return { date, label: `Week of ${this.format(date, 'week')}` };
         }),
       };
     }
 
-    const start = new Date(today.getFullYear(), today.getMonth() - 6, 1, 12);
+    const start = new Date(today.getFullYear(), today.getMonth() - 6 - extension.before, 1, 12);
     return {
       start,
       columnWidth: 150,
-      columns: Array.from({ length: 13 }, (_, index) => {
+      columns: Array.from({ length: 13 + extension.before + extension.after }, (_, index) => {
         const date = new Date(start.getFullYear(), start.getMonth() + index, 1, 12);
         return { date, label: this.format(date, 'month') };
       }),

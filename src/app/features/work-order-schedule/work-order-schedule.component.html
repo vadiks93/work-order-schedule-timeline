@@ -5,24 +5,57 @@
     <h1 class="schedule__title">Work Orders</h1>
 
     <div class="schedule__toolbar">
-      <div class="timescale">
-        <span class="timescale__label">Timescale</span>
-        <ng-select
-          class="timescale__select"
-          inputId="timescale"
-          aria-label="Timeline timescale"
-          [items]="timescaleOptions"
-          bindLabel="label"
-          bindValue="value"
-          [clearable]="false"
-          [searchable]="false"
-          [ngModel]="timescale()"
-          (ngModelChange)="setTimescale($event)"
+      <div class="schedule__controls">
+        <div class="timescale">
+          <span class="timescale__label">Timescale</span>
+          <ng-select
+            class="timescale__select"
+            inputId="timescale"
+            aria-label="Timeline timescale"
+            [items]="timescaleOptions"
+            bindLabel="label"
+            bindValue="value"
+            [clearable]="false"
+            [searchable]="false"
+            [ngModel]="timescale()"
+            (ngModelChange)="setTimescale($event)"
+          />
+        </div>
+        <button
+          class="schedule__toolbar-button"
+          type="button"
+          (click)="scrollToCurrentDate()"
+        >
+          Today
+        </button>
+        <button
+          class="schedule__toolbar-button"
+          type="button"
+          [disabled]="store.orderCount() === 0"
+          (click)="clearWorkOrders()"
+        >
+          Clear work orders
+        </button>
+      </div>
+      <p class="sr-only" id="timeline-instructions">
+        Select an empty point to create an order. Use Tab and Shift Tab to move between rows and
+        work-order actions. Use Arrow Right and Arrow Left to move a new-order selection by one
+        day. Use Arrow Up and Arrow Down to move that selection between work centers. Press Enter
+        to create from the selected range. Double click a work order to edit it.
+      </p>
+      <div class="schedule__help">
+        <button
+          class="schedule__help-button"
+          type="button"
+          aria-label="Show timeline keyboard and mouse help"
+        >
+          <span aria-hidden="true">?</span>
+        </button>
+        <app-floating-label
+          mode="tooltip"
+          label="Tab moves through rows and existing work orders. Arrows move the create selection by day or work center. Enter creates. Double click edits."
         />
       </div>
-      <p class="schedule__hint" id="timeline-instructions">
-        Select an empty point to create an order. Use Tab to reach order actions.
-      </p>
     </div>
 
     <section
@@ -45,6 +78,7 @@
         #timelineViewport
         tabindex="0"
         aria-label="Scrollable timeline"
+        (scroll)="handleTimelineScroll()"
       >
         <div class="timeline__canvas" [style.width.px]="canvasWidth()">
           <div
@@ -94,6 +128,7 @@
                 type="button"
                 [attr.aria-label]="'Create a work order for ' + center.data.name"
                 (click)="handleCreateButtonClick($event, center.docId)"
+                (keydown)="handleCreateButtonKeydown($event, center.docId)"
               ></button>
 
               @if (hoverPreview(); as preview) {
@@ -111,7 +146,7 @@
               @for (order of ordersFor(center.docId); track order.docId) {
                 <li
                   class="work-order"
-                  [class]="'work-order work-order--' + order.data.status"
+                  [class]="'work-order work-order--' + order.data.status + (isTinyOrder(order) ? ' work-order--tiny' : '')"
                   [ngStyle]="orderStyle(order)"
                   (dblclick)="edit($event, order)"
                   [attr.aria-label]="
@@ -135,10 +170,12 @@
                   <button
                     class="work-order__menu-button"
                     type="button"
+                    [attr.data-order-id]="order.docId"
                     [attr.aria-expanded]="openMenuId() === order.docId"
                     [attr.aria-controls]="'menu-' + order.docId"
                     [attr.aria-label]="'Actions for ' + order.data.name"
                     (click)="toggleMenu($event, order.docId)"
+                    (keydown)="handleWorkOrderActionKeydown($event, order)"
                     (dblclick)="$event.stopPropagation()"
                   >
                     <span aria-hidden="true">•••</span>

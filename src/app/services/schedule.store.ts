@@ -43,10 +43,10 @@ export class ScheduleStore {
   availableEndDate(
     workCenterId: string,
     startDate: string,
-    maximumDaysAfterStart = 7,
+    defaultDurationDays = 7,
   ): string | null {
     const start = this.toUtcDay(startDate);
-    const maximumEnd = start + maximumDaysAfterStart * 86_400_000;
+    const maximumEnd = start + (defaultDurationDays - 1) * 86_400_000;
     const orders = this.ordersFor(workCenterId);
 
     if (
@@ -70,7 +70,7 @@ export class ScheduleStore {
     return new Date(availableEnd).toISOString().slice(0, 10);
   }
 
-  create(draft: WorkOrderDraft): void {
+  create(draft: WorkOrderDraft): WorkOrderDocument {
     const order: WorkOrderDocument = {
       docId: crypto.randomUUID(),
       docType: 'workOrder',
@@ -78,6 +78,7 @@ export class ScheduleStore {
     };
     this.workOrders.update((orders) => [...orders, order]);
     void this.api.createWorkOrder(order);
+    return order;
   }
 
   update(docId: string, draft: WorkOrderDraft): void {
@@ -95,6 +96,11 @@ export class ScheduleStore {
   delete(docId: string): void {
     this.workOrders.update((orders) => orders.filter((order) => order.docId !== docId));
     void this.api.deleteWorkOrder(docId);
+  }
+
+  clearWorkOrders(): void {
+    this.workOrders.set([]);
+    void this.api.clearWorkOrders();
   }
 
   private toUtcDay(isoDate: string): number {

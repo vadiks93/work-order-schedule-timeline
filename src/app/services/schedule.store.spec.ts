@@ -5,6 +5,7 @@ describe('ScheduleStore', () => {
   let store: ScheduleStore;
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({});
     store = TestBed.inject(ScheduleStore);
   });
@@ -98,5 +99,21 @@ describe('ScheduleStore', () => {
 
     store.delete(created.docId);
     expect(store.orderCount()).toBe(initialCount);
+  });
+
+  it('persists work order changes to local storage through the mocked API', async () => {
+    const draft = {
+      name: 'Persisted order',
+      workCenterId: 'wc-genesis',
+      status: 'open' as const,
+      startDate: '2030-02-01',
+      endDate: '2030-02-04',
+    };
+
+    store.create(draft);
+    await Promise.resolve();
+
+    const snapshot = JSON.parse(localStorage.getItem('work-order-schedule-timeline')!);
+    expect(snapshot.workOrders.at(-1).data.name).toBe('Persisted order');
   });
 });

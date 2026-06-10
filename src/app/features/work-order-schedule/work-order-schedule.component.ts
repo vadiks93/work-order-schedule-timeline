@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { WorkOrderPanelComponent } from '../work-order-panel/work-order-panel.component';
 import { ChipComponent, ChipVariant } from '../../shared/chip/chip.component';
+import { FloatingLabelComponent } from '../../shared/floating-label/floating-label.component';
 import {
   STATUS_LABELS,
   TimelineColumn,
@@ -45,12 +46,21 @@ type MenuDirection = 'left' | 'right';
 
 @Component({
   selector: 'app-work-order-schedule',
-  imports: [NgStyle, FormsModule, NgSelectModule, WorkOrderPanelComponent, ChipComponent],
+  imports: [
+    NgStyle,
+    FormsModule,
+    NgSelectModule,
+    WorkOrderPanelComponent,
+    ChipComponent,
+    FloatingLabelComponent,
+  ],
   templateUrl: './work-order-schedule.component.html',
   styleUrl: './work-order-schedule.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorkOrderScheduleComponent implements AfterViewInit {
+  private readonly menuWidth = 160;
+
   @ViewChild('timelineViewport')
   private timelineViewport?: ElementRef<HTMLDivElement>;
 
@@ -71,6 +81,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   protected readonly initialEndDate = signal('');
   protected readonly overlapError = signal(false);
   protected readonly hoverPreview = signal<HoverPreview | null>(null);
+  protected readonly selectedWorkCenterId = signal<string | null>(null);
   private panelTrigger: HTMLElement | null = null;
   private menuTrigger: HTMLElement | null = null;
 
@@ -125,18 +136,42 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   }
 
   protected orderStyle(order: WorkOrderDocument): Record<string, string> {
+    const { left, width } = this.orderPosition(order);
+    return {
+      left: `${left}px`,
+      width: `${width}px`,
+    };
+  }
+
+  protected shouldShowTooltip(order: WorkOrderDocument): boolean {
+    const { width } = this.orderPosition(order);
+    return width < 150 || this.isNameLikelyClipped(order, width);
+  }
+
+  protected tooltipText(order: WorkOrderDocument): string {
+    return `${order.data.name} - ${this.statusLabels[order.data.status]}`;
+  }
+
+  private isNameLikelyClipped(order: WorkOrderDocument, orderWidth: number): boolean {
+    const statusWidth = this.statusLabels[order.data.status].length * 6 + 20;
+    const reservedWidth = statusWidth + 21 + 14 + 8;
+    const availableNameWidth = Math.max(0, orderWidth - reservedWidth);
+    return order.data.name.length * 6.2 > availableNameWidth;
+  }
+
+  private orderPosition(order: WorkOrderDocument): { left: number; width: number } {
     const left = Math.max(0, this.positionForIso(order.data.startDate));
     const dayAfterEnd = new Date(`${order.data.endDate}T12:00:00`);
     dayAfterEnd.setDate(dayAfterEnd.getDate() + 1);
     const right = Math.min(this.canvasWidth(), this.positionForDate(dayAfterEnd));
     return {
-      left: `${left}px`,
-      width: `${Math.max(42, right - left)}px`,
+      left,
+      width: Math.max(1, right - left),
     };
   }
 
   protected createFromPointer(event: MouseEvent, workCenterId: string): void {
-    if ((event.target as HTMLElement).closest('.work-order')) {
+    if ((event.target as HTMLElement).closest('.work-order') || this.openMenuId()) {
       return;
     }
     const row = event.currentTarget as HTMLElement;
@@ -149,6 +184,11 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   }
 
   protected updateHoverPreview(event: PointerEvent, workCenterId: string): void {
+    if ((event.target as HTMLElement).closest('.work-order') || this.openMenuId()) {
+      this.hoverPreview.set(null);
+      return;
+    }
+
     const row = event.currentTarget as HTMLElement;
     const x = event.clientX - row.getBoundingClientRect().left;
     const start = this.dateAtPosition(x);
@@ -191,8 +231,18 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     }
   }
 
+  protected handleCreateButtonClick(event: MouseEvent, workCenterId: string): void {
+    if (event.detail !== 0) {
+      return;
+    }
+
+    event.stopPropagation();
+    this.createFromKeyboard(workCenterId);
+  }
+
   protected toggleMenu(event: MouseEvent, orderId: string): void {
     event.stopPropagation();
+    this.hoverPreview.set(null);
     if (this.openMenuId() === orderId) {
       this.openMenuId.set(null);
       this.menuTrigger = null;
@@ -206,7 +256,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
       const buttonRect = button.getBoundingClientRect();
       const viewportRect = viewport.getBoundingClientRect();
       this.openMenuDirection.set(
-        viewportRect.right - buttonRect.left >= 200 ? 'right' : 'left',
+        viewportRect.right - buttonRect.left >= this.menuWidth ? 'right' : 'left',
       );
     }
 
@@ -249,6 +299,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
       this.rememberPanelTrigger();
     }
     this.editingOrder.set(order);
+    this.selectedWorkCenterId.set(order.data.workCenterId);
     this.overlapError.set(false);
     this.panelOpen.set(true);
     this.openMenuId.set(null);
@@ -285,6 +336,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     this.panelOpen.set(false);
     this.editingOrder.set(null);
     this.overlapError.set(false);
+    this.selectedWorkCenterId.set(null);
     setTimeout(() => {
       this.panelTrigger?.focus();
       this.panelTrigger = null;
@@ -305,6 +357,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     this.rememberPanelTrigger();
     this.editingOrder.set(null);
     this.initialWorkCenterId.set(workCenterId);
+    this.selectedWorkCenterId.set(workCenterId);
     this.initialStartDate.set(this.toIso(date));
     this.initialEndDate.set(endDate);
     this.overlapError.set(false);

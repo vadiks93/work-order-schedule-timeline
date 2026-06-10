@@ -155,6 +155,7 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
   submit(): void {
     this.form.markAllAsTouched();
     if (this.form.invalid || this.dateRangeInvalid) {
+      setTimeout(() => this.focusFirstInvalidControl());
       return;
     }
 
@@ -197,6 +198,28 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
     const date = isoDate ? new Date(`${isoDate}T12:00:00`) : new Date();
     date.setDate(date.getDate() + days);
     return date.toISOString().slice(0, 10);
+  }
+
+  private focusFirstInvalidControl(): void {
+    const controlIds = [
+      { control: this.form.controls.name, id: 'work-order-name' },
+      { control: this.form.controls.workCenterId, id: 'work-center' },
+      { control: this.form.controls.status, id: 'work-order-status' },
+      { control: this.form.controls.startDate, id: 'start-date' },
+      { control: this.form.controls.endDate, id: 'end-date', invalid: this.dateRangeInvalid },
+    ];
+
+    const firstInvalid = controlIds.find(
+      ({ control, invalid }) => control.invalid || invalid,
+    );
+
+    if (!firstInvalid) {
+      return;
+    }
+
+    const target = this.hostElement.querySelector<HTMLElement>(`#${firstInvalid.id}`);
+    target?.scrollIntoView({ block: 'center' });
+    target?.focus();
   }
 
   private getFocusableElements(): HTMLElement[] {

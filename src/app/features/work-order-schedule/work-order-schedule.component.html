@@ -27,6 +27,8 @@
 
     <section
       class="timeline"
+      [class.timeline--menu-open]="openMenuId()"
+      [class.timeline--previewing]="hoverPreview()"
       id="timeline-grid"
       aria-label="Work order schedule"
       aria-describedby="timeline-instructions"
@@ -79,14 +81,19 @@
           </div>
 
           @for (center of store.workCenters(); track center.docId) {
-            <div class="timeline__row">
+            <ol
+              class="timeline__row"
+              [class.timeline__row--selected]="selectedWorkCenterId() === center.docId"
+              [class.timeline__row--previewing]="hoverPreview()?.workCenterId === center.docId"
+              (click)="createFromPointer($event, center.docId)"
+              (pointermove)="updateHoverPreview($event, center.docId)"
+              (pointerleave)="clearHoverPreview()"
+            >
               <button
                 class="timeline__create-button"
                 type="button"
                 [attr.aria-label]="'Create a work order for ' + center.data.name"
-                (click)="createFromPointer($event, center.docId)"
-                (pointermove)="updateHoverPreview($event, center.docId)"
-                (pointerleave)="clearHoverPreview()"
+                (click)="handleCreateButtonClick($event, center.docId)"
               ></button>
 
               @if (hoverPreview(); as preview) {
@@ -96,13 +103,13 @@
                     [ngStyle]="previewStyle(preview)"
                     aria-hidden="true"
                   >
-                    <span class="timeline__create-preview-label">Click to add dates</span>
+                    <app-floating-label label="Click to add dates" />
                   </div>
                 }
               }
 
               @for (order of ordersFor(center.docId); track order.docId) {
-                <article
+                <li
                   class="work-order"
                   [class]="'work-order work-order--' + order.data.status"
                   [ngStyle]="orderStyle(order)"
@@ -117,13 +124,14 @@
                     formatAccessibleDate(order.data.endDate)
                   "
                 >
-                  <span class="work-order__name">{{ order.data.name }}</span>
-                  <app-chip
-                    class="work-order__status"
-                    size="timeline"
-                    [variant]="statusChipVariant(order.data.status)"
-                    [label]="statusLabels[order.data.status]"
-                  />
+                  <div class="work-order__content">
+                    <span class="work-order__name">{{ order.data.name }}</span>
+                    <app-chip
+                      class="work-order__status"
+                      size="timeline"
+                      [variant]="statusChipVariant(order.data.status)"
+                      [label]="statusLabels[order.data.status]"
+                    />
                   <button
                     class="work-order__menu-button"
                     type="button"
@@ -135,6 +143,16 @@
                   >
                     <span aria-hidden="true">•••</span>
                   </button>
+
+                  </div>
+
+                  @if (shouldShowTooltip(order)) {
+                    <app-floating-label
+                      mode="tooltip"
+                      align="start"
+                      [label]="tooltipText(order)"
+                    />
+                  }
 
                   @if (openMenuId() === order.docId) {
                     <div
@@ -164,9 +182,9 @@
                       </button>
                     </div>
                   }
-                </article>
+                </li>
               }
-            </div>
+            </ol>
           }
         </div>
       </div>

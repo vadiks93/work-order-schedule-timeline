@@ -398,3 +398,227 @@ reproducing full assistant answers.
 
     **Change:** Reduced the work-order content gap and made the three-dot control smaller, while
     updating the right-opening menu anchor to remain aligned with the compact control.
+
+64. Can the expanded Edit/Delete menu and its text be smaller to better match the mockup?
+
+    **Change:** Reduced the menu width, height, padding, action row height, and text size, and
+    synchronized its viewport-edge direction calculation with the new compact width.
+
+65. Can the timeline header use less vertical space and remove the vertical separators from the
+    date headings and the Work Center heading?
+
+    **Change:** Reduced the responsive timeline header height, removed date-header right borders,
+    and removed the Work Center column edge shadow that appeared as a vertical divider.
+
+66. Can the Edit/Delete actions use a slightly bolder weight and become dark only when hovered or
+    keyboard-focused?
+
+    **Change:** Applied the medium font weight to menu actions, changed their default color to
+    muted text, and added dark text on hover and focus alongside the existing highlight.
+
+67. Can the right border of the fixed Work Center column be restored?
+
+    **Change:** Restored a one-pixel right divider on the Work Center column while keeping the
+    individual date-header vertical separators removed.
+
+68. Can the Edit/Delete actions remain blue by default and turn black only on hover or focus?
+
+    **Change:** Restored the menu actions' blue default text while retaining dark text for their
+    hover and keyboard-focus states.
+
+69. Can all dropdown and action-menu items use dark text initially and switch to blue when
+    hovered or keyboard-focused?
+
+    **Change:** Standardized timescale options, panel select options, and Edit/Delete actions to
+    use neutral dark text at rest and blue text for marked, hovered, or focused states.
+
+70. Can the status options in the create/edit panel use slightly smaller text and less vertical
+    spacing to match the mockup?
+
+    **Change:** Reduced status option text to 12px and tightened each option's height, padding,
+    and line height while leaving the selected status chip unchanged.
+
+71. Can letter spacing be removed from panel dropdown items and can the Work Center dropdown use
+    the same compact option styling as Status?
+
+    **Change:** Explicitly reset panel option letter spacing to zero and applied the same 12px
+    text, 30px row height, padding, and line height to Work Center and Status options.
+
+72. Can the Status dropdown options appear slightly bolder like the mockup?
+
+    **Change:** Increased panel dropdown option text to the medium font weight for both Status and
+    Work Center, preserving the selected status chip styling.
+
+73. Can the timeline component's pixel-based font sizes use variables, and does it make sense to
+    keep those variables local to the component?
+
+    **Change:** Added a component-local semantic type scale using `rem`-based Sass variables and
+    replaced timeline font-size literals with those variables. Sass variables keep the generated
+    CSS within Angular's component budget; pixels remain for precise borders, icons, and geometry.
+
+74. Can narrow work-order bars show a tooltip with the work-order name and status, and hide their
+    inline name/status text when the rendered width is under 150px?
+
+    **Change:** Added a rendered-width compact check for work orders. Compact bars now hide their
+    inline name and status, keep the action control, and show a hover/focus tooltip with the name
+    and status across Day, Week, and Month views.
+
+75. Can all schedule data operations go through a service that could later call an API
+    asynchronously, while remaining mocked for now and persisting to localStorage?
+
+    **Change:** Added a mocked async schedule API service with load/create/update/delete methods
+    backed by localStorage. The schedule store now loads through that service and persists
+    optimistic work-order mutations through the same API boundary.
+
+76. Can the timescale dropdown options use nearly the same font size as the selected value shown
+    in the control?
+
+    **Change:** Matched the timescale option font size and weight to the selected control value
+    while preserving the existing hover and marked-state colors.
+
+77. Can the "Click to add dates" label and compact work-order tooltip share one reusable visual
+    implementation?
+
+    **Change:** Added a standalone floating-label component with always-visible and tooltip modes.
+    The creation preview and compact work-order tooltip now reuse that component instead of
+    keeping separate label markup and styles.
+
+78. Can the Work Center header and timeline date header labels be slightly smaller with a little
+    less vertical spacing?
+
+    **Change:** Added a smaller header font-size token for timeline headings and reduced the
+    responsive timeline header height slightly so the header matches the mockups more closely.
+
+79. Should scheduled work orders use list semantics instead of `article` elements?
+
+    **Change:** Changed each timeline row to an ordered list and each work order to a list item,
+    preserving the existing classes, positioning, and interactions while improving schedule
+    semantics.
+
+80. Can compact work-order tooltips appear above the fixed Work Center column instead of being
+    visually cut off on the left side?
+
+    **Change:** Raised rows that contain floating labels above the fixed Work Center column and
+    increased the floating label z-index so compact tooltips render over neighboring timeline
+    layers.
+
+81. The compact work-order tooltip is still clipped near the left edge. Can it avoid extending
+    into the Work Center column?
+
+    **Change:** Added a start-aligned mode to the floating-label component and used it for compact
+    work-order tooltips. These tooltips now open from the work-order bar toward the right instead
+    of centering across the clipped left side.
+
+82. When the create/edit modal opens, existing timeline events can still appear above the modal.
+    Can the modal layer sit above all timeline content?
+
+    **Change:** Added modal z-index tokens and raised the backdrop and panel above the highest
+    timeline layers, including menus, active rows, and floating labels.
+
+83. When opening the create/edit modal, can the selected work-center row remain visually hovered
+    or focused underneath the modal backdrop?
+
+    **Change:** Added selected work-center row state for create and edit flows, applied the hover
+    row background to the matching timeline row and Work Center label while the panel is open, and
+    cleared the selection when the panel closes.
+
+84. Can the modal-open selection keep the timeline row highlight only, without highlighting the
+    left Work Center label?
+
+    **Change:** Removed the persistent selected styling from the Work Center label and kept it only
+    on the matching timeline row.
+
+85. Can the project keep durable context for future Codex sessions without repeating the same
+    guidance in multiple places?
+
+    **Change:** Added `AGENTS.md` for repo-level Codex working rules and `PROJECT_CONTEXT.md` as a
+    concise handoff snapshot of the current architecture, UI direction, known follow-ups, and
+    verification commands.
+
+86. Can short work-order bars stop hiding their name and status while the final compact design is
+    still undecided?
+
+    **Change:** Removed the compact empty-bar state so short work orders continue to render their
+    name, status chip, and actions instead of showing only the menu button and tooltip.
+
+87. When creating or editing a work order, can submitting an invalid form move focus to the first
+    invalid input from the top?
+
+    **Change:** Added ordered invalid-control focus in the work-order panel submit flow so failed
+    validation scrolls and focuses the first invalid field, using the end date for date-range
+    errors.
+
+88. Can short work-order bars keep rendering their inner content but clip it to the actual bar
+    width instead of hiding the text?
+
+    **Change:** Wrapped the work-order name, status chip, and menu trigger in a full-width clipped
+    content layer while keeping the menu popover outside that clipping boundary.
+
+89. Can the start and end date fields stop showing browser-saved option popups when clicked?
+
+    **Change:** Disabled autocomplete on the start and end date inputs so browser suggestions do
+    not appear over the date controls while keeping the datepicker buttons available.
+
+90. Can the timescale control text look a little bolder like the mockups?
+
+    **Change:** Increased the timescale label, selected value, and dropdown option weights while
+    keeping the control dimensions unchanged.
+
+91. Can the timescale dropdown arrow look more like the mockup's simple "v" chevron?
+
+    **Change:** Replaced the default ng-select triangle arrow for the timescale control with a
+    small bordered chevron that flips when the dropdown opens.
+
+92. Can the timescale chevron stay neutral by default and become blue only when opened?
+
+    **Change:** Set the timescale chevron to the normal control text color by default and switched
+    it to the primary color only for the opened dropdown state.
+
+93. Can the timeline focus border avoid overlapping work orders near the viewport edges?
+
+    **Change:** Changed the timeline viewport focus ring from an inset shadow to an outer shadow so
+    the keyboard focus indication remains visible without painting over work-order bars.
+
+94. The outer viewport focus shadow was clipped and disappeared. Can the focus border be visible
+    again without overlapping work orders?
+
+    **Change:** Moved the visible focus ring to the outer timeline container whenever the scrollable
+    viewport has keyboard focus, keeping the focus cue visible outside the work-order canvas.
+
+95. Can tiny consecutive work orders in week and month views avoid visually overlapping?
+
+    **Change:** Removed the artificial minimum width from saved work-order bars so they render at
+    their true scaled date width, allowing very small bars instead of overlapping nearby orders.
+
+96. Can work orders show a tooltip again when their name or status is clipped by a short bar?
+
+    **Change:** Reused the floating-label tooltip for narrow work-order bars while keeping the
+    clipped inner content visible inside the actual bar width.
+
+97. Can the timeline typography, spacing, and available layout area scale better on very large
+    screens such as TVs?
+
+    **Change:** Increased the large-screen caps for the global timeline sizing tokens and added a
+    large-viewport root font-size scale so rem-based timeline text grows modestly beyond desktop
+    widths.
+
+98. Can the edit/delete menu stop triggering row hover states underneath, and can the add-date
+    hover preview appear more reliably across the empty row area?
+
+    **Change:** Moved create hover/click handling to the timeline row, kept the invisible create
+    button for keyboard activation, and suppresses add-date previews while a work-order action menu
+    is open.
+
+99. Can open work-order menus stop causing lower rows to flicker as hovered, and can clipped-order
+    tooltips render above neighboring bars?
+
+    **Change:** Added a menu-open timeline state and global layering rules so non-menu rows do not
+    show hover styling underneath an open menu, while active work-order rows and menu rows rise
+    above neighboring bars.
+
+100. Can the create-preview tooltip avoid causing neighboring rows to flicker when it overlaps
+     them?
+
+     **Change:** Added an active preview timeline state, raised the previewing row above neighboring
+     rows, suppressed hover styling on non-preview rows while previewing, and allowed the preview
+     itself to catch pointer events instead of letting the browser hover through it.

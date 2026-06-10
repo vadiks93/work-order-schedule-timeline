@@ -1,3 +1,9 @@
+$font-size-title: 1.5rem;
+$font-size-body: 0.8125rem;
+$font-size-small: 0.75rem;
+$font-size-header: 0.71875rem;
+$font-size-compact: 0.6875rem;
+
 :host {
   display: block;
 }
@@ -33,7 +39,7 @@
 
   &__title {
     margin: 0 0 24px;
-    font-size: 24px;
+    font-size: $font-size-title;
     font-weight: 600;
     letter-spacing: -0.3px;
   }
@@ -49,7 +55,7 @@
   &__hint {
     margin: 0;
     color: var(--color-muted);
-    font-size: 11px;
+    font-size: $font-size-compact;
   }
 }
 
@@ -66,7 +72,8 @@
     padding: 0 7px;
     background: var(--color-surface-label);
     color: var(--color-muted-strong);
-    font-size: 11px;
+    font-size: $font-size-compact;
+    font-weight: 600;
     line-height: 1;
   }
 
@@ -82,8 +89,8 @@
     border: 0;
     border-radius: 0 6px 6px 0;
     color: var(--color-primary-text);
-    font-size: 11px;
-    font-weight: 600;
+    font-size: $font-size-compact;
+    font-weight: 700;
   }
 
   .timescale__select.ng-select .ng-value-container {
@@ -96,6 +103,19 @@
     padding-right: 9px;
   }
 
+  .timescale__select.ng-select .ng-arrow {
+    width: 6px;
+    height: 6px;
+    border: solid var(--color-control-text);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translateY(-2px);
+  }
+
+  .timescale__select.ng-select.ng-select-opened .ng-arrow {
+    border-color: var(--color-primary-text);
+    transform: rotate(225deg) translate(-2px, -1px);
+  }
+
   .timescale__select.ng-select.ng-select-focused > .ng-select-container {
     box-shadow: inset 0 0 0 2px var(--color-primary);
   }
@@ -106,25 +126,24 @@
     margin-top: 4px;
     border-color: var(--color-border-control);
     border-radius: 5px;
-    box-shadow: 0 3px 8px var(--color-dropdown-shadow);
   }
 
   .timescale__select.ng-select .ng-dropdown-panel .ng-option {
     min-height: 28px;
     padding: 5px 10px;
     color: var(--color-control-text);
-    font-size: 12px;
+    font-size: $font-size-compact;
+    font-weight: 700;
     line-height: 16px;
   }
 
   .timescale__select.ng-select .ng-dropdown-panel .ng-option.ng-option-selected {
     background: var(--color-white);
-    color: var(--color-primary-text);
-    font-weight: 400;
   }
 
   .timescale__select.ng-select .ng-dropdown-panel .ng-option.ng-option-marked {
     background: var(--color-surface-option-hover);
+    color: var(--color-primary-action);
   }
 }
 
@@ -136,10 +155,15 @@
   border: 1px solid var(--color-border-layout);
   background: var(--color-surface-subtle);
 
+  &:has(&__viewport:focus-visible) {
+    box-shadow: 0 0 0 3px var(--color-focus-ring-soft);
+  }
+
   &__work-centers {
     z-index: 4;
+    box-sizing: border-box;
+    border-right: 1px solid var(--color-border-grid);
     background: var(--color-white);
-    box-shadow: 4px 0 10px var(--color-work-center-shadow);
   }
 
   &__corner,
@@ -155,14 +179,14 @@
     align-items: center;
     height: var(--timeline-header-height);
     color: var(--color-muted-heading);
-    font-size: 12px;
+    font-size: $font-size-header;
   }
 
   &__work-center {
     display: flex;
     align-items: center;
     color: var(--color-ink-soft);
-    font-size: 13px;
+    font-size: $font-size-body;
     font-weight: 600;
   }
 
@@ -170,10 +194,6 @@
     overflow: auto;
     outline: 0;
     scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
-
-    &:focus-visible {
-      box-shadow: inset 0 0 0 3px var(--color-focus-ring-soft);
-    }
   }
 
   &__canvas {
@@ -195,10 +215,9 @@
     flex: 0 0 auto;
     display: grid;
     place-items: center;
-    border-right: 1px solid var(--color-border-grid);
     border-bottom: 1px solid var(--color-border-grid);
     color: var(--color-muted-column);
-    font-size: 12px;
+    font-size: $font-size-header;
   }
 
   &__row {
@@ -206,15 +225,23 @@
     z-index: 1;
     box-sizing: border-box;
     height: var(--timeline-row-height);
+    margin: 0;
+    padding: 0;
+    list-style: none;
 
     &:hover,
-    &:focus-within {
+    &:focus-within,
+    &--selected {
       z-index: 5;
       background: var(--color-surface-hover);
     }
 
     &:has(.work-order__menu) {
       z-index: 30;
+    }
+
+    &:has(app-floating-label) {
+      z-index: 40;
     }
   }
 
@@ -260,22 +287,7 @@
     border: 1px solid var(--color-preview-border);
     border-radius: 8px;
     background: var(--color-preview-background);
-    pointer-events: none;
-  }
-
-  &__create-preview-label {
-    position: absolute;
-    bottom: calc(100% + 5px);
-    left: 50%;
-    padding: 3px 8px;
-    transform: translateX(-50%);
-    border-radius: 8px;
-    background: var(--color-preview-label);
-    color: var(--color-white);
-    font-size: 11px;
-    line-height: 1.2;
-    white-space: nowrap;
-    box-shadow: 0 2px 5px var(--color-preview-shadow);
+    pointer-events: auto;
   }
 
   &__current-period {
@@ -291,7 +303,7 @@
   &__current-period-label {
     position: absolute;
     top: var(--timeline-header-height);
-    z-index: 20;
+    z-index: 899;
     transform: translateX(-1px);
     pointer-events: none;
   }
@@ -302,15 +314,10 @@
   top: calc((var(--timeline-row-height) - clamp(34px, calc(31px + 0.3906vw), 40px)) / 2);
   z-index: 2;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 4px;
   height: clamp(34px, calc(31px + 0.3906vw), 40px);
-  min-width: 42px;
-  padding: 0 7px;
+  padding: 0;
   border: 1px solid;
   border-radius: 8px;
-  cursor: default;
 
   &--open {
     border-color: var(--color-order-open-border);
@@ -332,12 +339,23 @@
     background: var(--color-order-blocked-background);
   }
 
+  &__content {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: 0 7px;
+  }
+
   &__name {
     min-width: 0;
     overflow: hidden;
     flex: 1;
     color: var(--color-ink);
-    font-size: 11px;
+    font-size: $font-size-compact;
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -351,17 +369,20 @@
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 23px;
+    width: 21px;
     height: 23px;
-    padding: 0;
     border: 0;
     border-radius: 4px;
     background: var(--color-menu-button-background);
     color: var(--color-muted-menu);
-    font-size: 12px;
-    letter-spacing: -1px;
     opacity: 0;
     cursor: pointer;
+    transition: color .3s, filter .3s;
+
+    &:is(:hover, :focus-visible) {
+      color: var(--color-muted-strong);
+      filter: brightness(.98);
+    }
   }
 
   &:hover &__menu-button,
@@ -376,9 +397,9 @@
     z-index: 100;
     display: grid;
     box-sizing: border-box;
-    width: 200px;
-    min-height: 80px;
-    padding: 6px 0;
+    width: 160px;
+    min-height: 66px;
+    padding: 5px 0;
     border: 1px solid var(--color-border-menu);
     border-radius: 5px;
     background: var(--color-white);
@@ -391,19 +412,21 @@
 
     button {
       width: 100%;
-      min-height: 29px;
+      min-height: 27px;
       padding: 0 10px;
       border: 0;
       background: transparent;
-      color: var(--color-primary-action);
+      color: var(--color-control-text);
       font: inherit;
-      font-size: 12px;
+      font-size: $font-size-compact;
+      font-weight: 600;
       text-align: left;
       cursor: pointer;
 
       &:hover,
       &:focus-visible {
         background: var(--color-surface-menu-hover);
+        color: var(--color-primary-action);
         outline: 0;
       }
     }
@@ -413,7 +436,7 @@
 .panel-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: var(--z-modal-backdrop);
   border: 0;
   background: var(--color-backdrop);
   cursor: default;

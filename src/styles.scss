@@ -17,11 +17,13 @@
 }
 
 :root {
-  --app-gutter: clamp(32px, 6.5vw, 120px);
-  --timeline-row-height: clamp(44px, calc(38px + 0.78125vw), 58px);
-  --timeline-header-height: clamp(38px, calc(34px + 0.5208vw), 46px);
-  --timeline-work-center-width: clamp(220px, 19.53125vw, 360px);
-  --timeline-height: clamp(560px, calc(390px + 16.93vw), 820px);
+  --app-gutter: clamp(32px, 6.5vw, 140px);
+  --timeline-row-height: clamp(44px, calc(38px + 0.78125vw), 68px);
+  --timeline-header-height: clamp(30px, calc(28px + 0.3255vw), 40px);
+  --timeline-work-center-width: clamp(220px, 19.53125vw, 420px);
+  --timeline-height: clamp(560px, calc(390px + 16.93vw), 960px);
+  --z-modal-backdrop: 900;
+  --z-modal-panel: 910;
 
   --color-white: #fff;
   --color-ink: #111a3a;
@@ -75,7 +77,7 @@
   --color-order-blocked-background: #fffaf0;
   --color-status-blocked-background: #ffe9aa;
   --color-status-blocked-text: #c34a00;
-  --color-menu-button-background: #dcdef3;
+  --color-menu-button-background: #e1e3f5;
   --color-error-border: #efb5b5;
   --color-error-background: #fff3f3;
   --color-error-text: #a32929;
@@ -113,12 +115,66 @@ body {
   letter-spacing: normal;
 }
 
+@media (min-width: 1800px) {
+  html {
+    font-size: clamp(16px, .9vw, 19px);
+  }
+}
+
 button,
 input,
 select,
 textarea {
   font: inherit;
   letter-spacing: normal;
+}
+
+.timeline__corner,
+.timeline__column-heading {
+  font-weight: 600;
+}
+
+.work-order__menu-button span {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: -5px 0 currentColor, 5px 0 currentColor;
+  font-size: 0;
+}
+
+.timeline .timeline__row:has(.work-order__menu) {
+  z-index: 90;
+}
+
+.timeline .timeline__row:has(.work-order:is(:hover, :focus-within)) {
+  z-index: 80;
+}
+
+.timeline.timeline--menu-open .timeline__row:hover:not(:has(.work-order__menu)) {
+  z-index: 1;
+  background: transparent;
+}
+
+.timeline .timeline__row.timeline__row--previewing {
+  z-index: 890 !important;
+}
+
+.timeline__row--previewing .timeline__create-preview {
+  z-index: 890;
+}
+
+.timeline__row--previewing app-floating-label {
+  z-index: 895;
+}
+
+.timeline.timeline--previewing .timeline__row:hover:not(.timeline__row--previewing) {
+  z-index: 1;
+  background: transparent;
+}
+
+.timeline__create-preview app-floating-label {
+  pointer-events: auto;
 }
 
 :focus-visible {

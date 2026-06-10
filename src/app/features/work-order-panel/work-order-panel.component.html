@@ -106,6 +106,7 @@
           formControlName="startDate"
           ngbDatepicker
           #startPicker="ngbDatepicker"
+          autocomplete="off"
           required
           [attr.aria-invalid]="startDateErrorVisible"
           [attr.aria-describedby]="startDateErrorVisible ? 'start-date-error' : null"
@@ -136,6 +137,7 @@
           formControlName="endDate"
           ngbDatepicker
           #endPicker="ngbDatepicker"
+          autocomplete="off"
           required
           [attr.aria-invalid]="endDateErrorVisible"
           [attr.aria-describedby]="endDateErrorVisible ? 'end-date-error' : null"

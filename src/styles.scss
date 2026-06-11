@@ -152,8 +152,20 @@ textarea {
   font-size: 0;
 }
 
-.work-order--tiny .work-order__content {
-  visibility: hidden;
+.timeline .work-order.work-order--overflowing {
+  overflow: visible;
+}
+
+.timeline .work-order.work-order--overflowing .work-order__content {
+  width: max-content;
+  min-width: 100%;
+  overflow: visible;
+}
+
+.timeline .work-order.work-order--overflowing .work-order__name {
+  flex: 0 0 auto;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .schedule__controls {

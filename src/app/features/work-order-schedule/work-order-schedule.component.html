@@ -146,7 +146,7 @@
               @for (order of ordersFor(center.docId); track order.docId) {
                 <li
                   class="work-order"
-                  [class]="'work-order work-order--' + order.data.status + (isTinyOrder(order) ? ' work-order--tiny' : '')"
+                  [class]="'work-order work-order--' + order.data.status + (shouldOverflowOrder(order) ? ' work-order--overflowing' : '')"
                   [ngStyle]="orderStyle(order)"
                   (dblclick)="edit($event, order)"
                   [attr.aria-label]="

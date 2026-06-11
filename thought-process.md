@@ -681,6 +681,18 @@ reproducing full assistant answers.
 
 108. Can a button scroll back to the current date, and can dynamic timeline expansion wait longer?
 
-     **Change:** Added a compact Today toolbar button that resets expanded timeline range and
-     recenters the viewport on the current day, week, or month. Increased the dynamic horizontal
-     expansion delay to two seconds so the timeline expands less eagerly while scrolling.
+     **Change:** Added a compact Today toolbar button that recenters the viewport on the current
+     day, week, or month while preserving any dynamically expanded timeline range. Tuned the
+     dynamic horizontal expansion delay so the timeline expands less eagerly while scrolling.
+
+109. Can short work-order text overflow only when it will not collide with a nearby work order?
+
+     **Change:** Added an estimated inline-content collision check for each work order. Short or
+     clipped work orders may let their name, status, and action content extend beyond the bar only
+     when there is enough empty space before the next work order in the same row. If that content
+     would collide, the bar keeps clipped content and shows the tooltip instead.
+
+110. Can the selected timeline scale be stored in localStorage?
+
+     **Change:** Persisted the selected Day, Week, or Month timescale in localStorage and restored
+     it on reload with a validated Day fallback for missing or invalid stored values.

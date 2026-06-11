@@ -65,9 +65,10 @@ type MenuDirection = 'left' | 'right';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorkOrderScheduleComponent implements AfterViewInit {
+  private readonly timescaleStorageKey = 'work-order-schedule-timescale';
   private readonly createPreviewWidth = 100;
   private readonly menuWidth = 160;
-  private readonly expandDelay = 1000;
+  private readonly expandDelay = 700;
   private readonly expandThreshold = 180;
 
   @ViewChild('timelineViewport')
@@ -80,7 +81,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     { value: 'week', label: 'Week' },
     { value: 'month', label: 'Month' },
   ];
-  protected readonly timescale = signal<Timescale>('day');
+  protected readonly timescale = signal<Timescale>(this.readStoredTimescale());
   protected readonly openMenuId = signal<string | null>(null);
   protected readonly openMenuDirection = signal<MenuDirection>('left');
   protected readonly panelOpen = signal(false);
@@ -140,6 +141,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
       return;
     }
     this.timescale.set(value);
+    this.storeTimescale(value);
     this.hoverPreview.set(null);
     this.resetTimelineExpansion();
     this.scheduleCenterOnToday();
@@ -170,17 +172,50 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     };
   }
 
-  protected shouldShowTooltip(order: WorkOrderDocument): boolean {
-    const { width } = this.orderPosition(order);
-    return width < 150 || this.isNameLikelyClipped(order, width);
+  protected shouldOverflowOrder(order: WorkOrderDocument): boolean {
+    if (!this.needsOverflowTreatment(order)) {
+      return false;
+    }
+
+    const { left, width } = this.orderPosition(order);
+    const contentRight = left + Math.max(width, this.estimatedOrderContentWidth(order));
+    const nextLeft = this.nextOrderLeft(order);
+
+    return contentRight + 8 <= nextLeft;
   }
 
-  protected isTinyOrder(order: WorkOrderDocument): boolean {
-    return this.orderPosition(order).width < 36;
+  protected shouldShowTooltip(order: WorkOrderDocument): boolean {
+    return this.needsOverflowTreatment(order) && !this.shouldOverflowOrder(order);
   }
 
   protected tooltipText(order: WorkOrderDocument): string {
     return `${order.data.name} - ${this.statusLabels[order.data.status]}`;
+  }
+
+  private needsOverflowTreatment(order: WorkOrderDocument): boolean {
+    const { width } = this.orderPosition(order);
+    return width < 150 || this.isNameLikelyClipped(order, width);
+  }
+
+  private estimatedOrderContentWidth(order: WorkOrderDocument): number {
+    const nameWidth = order.data.name.length * 6.2;
+    const statusWidth = this.statusLabels[order.data.status].length * 6 + 20;
+    const horizontalPadding = 14;
+    const menuWidth = 21;
+    const contentGaps = 8;
+
+    return horizontalPadding + nameWidth + statusWidth + menuWidth + contentGaps;
+  }
+
+  private nextOrderLeft(order: WorkOrderDocument): number {
+    const currentLeft = this.orderPosition(order).left;
+    const nextLeft = this.ordersFor(order.data.workCenterId)
+      .filter((candidate) => candidate.docId !== order.docId)
+      .map((candidate) => this.orderPosition(candidate).left)
+      .filter((left) => left > currentLeft)
+      .sort((first, second) => first - second)[0];
+
+    return nextLeft ?? this.canvasWidth();
   }
 
   private isNameLikelyClipped(order: WorkOrderDocument, orderWidth: number): boolean {
@@ -987,6 +1022,19 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
       return new Intl.DateTimeFormat('en', { month: 'short', year: 'numeric' }).format(date);
     }
     return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(date);
+  }
+
+  private readStoredTimescale(): Timescale {
+    const storedValue = localStorage.getItem(this.timescaleStorageKey);
+    return this.isTimescale(storedValue) ? storedValue : 'day';
+  }
+
+  private storeTimescale(value: Timescale): void {
+    localStorage.setItem(this.timescaleStorageKey, value);
+  }
+
+  private isTimescale(value: string | null): value is Timescale {
+    return value === 'day' || value === 'week' || value === 'month';
   }
 
   private startOfWeek(date: Date): Date {

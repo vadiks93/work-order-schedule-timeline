@@ -21,6 +21,8 @@ This file tracks follow-up ideas that are intentionally outside the current prot
 - Add drag handles on the left and right edges of a work-order bar for resizing its date range.
 - Reuse overlap validation while dragging so users cannot resize into an occupied range.
 - Provide keyboard-accessible alternatives for resizing dates without a mouse.
+- After creating or editing an order with dates far outside the current viewport, automatically
+  scroll or recenter the timeline near that saved work order and focus its action control.
 
 ## Possible Technical Direction
 

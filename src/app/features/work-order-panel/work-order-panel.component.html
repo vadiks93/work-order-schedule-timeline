@@ -40,13 +40,18 @@
         autocomplete="off"
         autofocus
         required
-        [attr.aria-invalid]="nameErrorVisible"
+        [class.form-field__control--invalid]="nameErrorVisible"
+        [attr.aria-invalid]="nameErrorVisible ? 'true' : null"
         [attr.aria-describedby]="nameErrorVisible ? 'work-order-name-error' : null"
       />
       <div class="form-field__error-slot">
         @if (nameErrorVisible) {
           <span class="form-field__error" id="work-order-name-error">
-            Enter a work order name.
+            {{
+              form.controls.name.hasError('maxlength')
+                ? 'Work order name cannot exceed 100 characters.'
+                : 'Enter a work order name.'
+            }}
           </span>
         }
       </div>
@@ -82,7 +87,7 @@
 
     <div class="form-field">
       <label class="form-field__label" for="start-date">Start date</label>
-      <div class="date-control">
+      <div class="date-control" [class.date-control--invalid]="startDateInvalid">
         <input
           #startDateInput
           class="form-field__control"
@@ -93,8 +98,9 @@
           #startPicker="ngbDatepicker"
           autocomplete="off"
           required
-          [attr.aria-invalid]="startDateErrorVisible"
-          [attr.aria-describedby]="startDateErrorVisible ? 'start-date-error' : null"
+          [class.form-field__control--invalid]="startDateInvalid"
+          [attr.aria-invalid]="startDateInvalid ? 'true' : null"
+          [attr.aria-describedby]="startDateDescriptionId"
         />
         <button
           class="date-control__button"
@@ -106,7 +112,7 @@
         </button>
       </div>
       <div class="form-field__error-slot">
-        @if (startDateErrorVisible) {
+        @if (startDateRequiredErrorVisible) {
           <span class="form-field__error" id="start-date-error">
             Enter a start date.
           </span>
@@ -116,8 +122,9 @@
 
     <div class="form-field">
       <label class="form-field__label" for="end-date">End date</label>
-      <div class="date-control">
+      <div class="date-control" [class.date-control--invalid]="endDateInvalid">
         <input
+          #endDateInput
           class="form-field__control"
           id="end-date"
           placeholder="dd.mm.yyyy"
@@ -126,8 +133,9 @@
           #endPicker="ngbDatepicker"
           autocomplete="off"
           required
-          [attr.aria-invalid]="endDateErrorVisible"
-          [attr.aria-describedby]="endDateErrorVisible ? 'end-date-error' : null"
+          [class.form-field__control--invalid]="endDateInvalid"
+          [attr.aria-invalid]="endDateInvalid ? 'true' : null"
+          [attr.aria-describedby]="endDateDescriptionId"
         />
         <button
           class="date-control__button"
@@ -140,13 +148,11 @@
       </div>
       <div class="form-field__error-slot">
         @if (endDateErrorVisible) {
-          <span class="form-field__error" id="end-date-error">
+          <span class="form-field__error" id="date-range-error">
             {{
-              dateRangeInvalid
-                ? 'End date must be on or after the start date.'
-                : dateRangeTooLong
-                  ? 'Work orders cannot be longer than 2 months.'
-                  : 'Enter an end date.'
+              dateRangeErrorVisible
+                ? dateRangeErrorMessage
+                : 'Enter an end date.'
             }}
           </span>
         }

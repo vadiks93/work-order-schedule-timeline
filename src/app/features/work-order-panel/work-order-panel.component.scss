@@ -114,6 +114,7 @@
       box-shadow: 0 0 0 3px var(--color-input-focus-shadow);
     }
 
+    &--invalid,
     &[aria-invalid='true'] {
       border-color: var(--color-error-control);
     }
@@ -134,6 +135,16 @@
 
 .date-control {
   position: relative;
+
+  &--invalid {
+    .form-field__control {
+      border-color: var(--color-error-control);
+    }
+
+    .date-control__button {
+      border-left-color: var(--color-error-control);
+    }
+  }
 
   &__button {
     position: absolute;

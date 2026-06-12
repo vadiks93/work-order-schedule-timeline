@@ -245,6 +245,15 @@ textarea {
   pointer-events: auto;
 }
 
+.ngb-dp-weekday,
+.ngb-dp-arrow-btn {
+  color: var(--color-primary-action);
+}
+
+.ngb-dp-weekday {
+  font-weight: 600;
+}
+
 :focus-visible {
   outline: 3px solid var(--color-focus-ring);
   outline-offset: 2px;

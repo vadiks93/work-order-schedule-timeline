@@ -14,6 +14,7 @@ import {
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   NgbDateParserFormatter,
+  NgbInputDatepicker,
   NgbDatepickerModule,
   NgbDateStruct,
 } from '@ng-bootstrap/ng-bootstrap';
@@ -59,6 +60,9 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
 
   @ViewChild('workOrderName') workOrderNameRef?: ElementRef<HTMLInputElement>;
   @ViewChild('startDateInput') startDateRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('endDateInput') endDateRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('startPicker') startPicker?: NgbInputDatepicker;
+  @ViewChild('endPicker') endPicker?: NgbInputDatepicker;
 
   private readonly hostElement: HTMLElement;
 
@@ -71,7 +75,10 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
   ).map(([value, label]) => ({ value, label }));
 
   readonly form = new FormGroup({
-    name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    name: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(100)],
+    }),
     workCenterId: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required],
@@ -106,19 +113,66 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
   }
 
   get nameErrorVisible(): boolean {
-    return this.form.controls.name.invalid && this.form.controls.name.touched;
+    return (
+      this.form.controls.name.invalid &&
+      (this.form.controls.name.dirty || this.form.controls.name.touched)
+    );
   }
 
-  get startDateErrorVisible(): boolean {
+  get startDateInvalid(): boolean {
+    return (
+      this.dateRangeErrorVisible ||
+      (this.form.controls.startDate.invalid && this.form.controls.startDate.touched)
+    );
+  }
+
+  get endDateInvalid(): boolean {
+    return (
+      this.dateRangeErrorVisible ||
+      (this.form.controls.endDate.invalid && this.form.controls.endDate.touched)
+    );
+  }
+
+  get startDateRequiredErrorVisible(): boolean {
     return this.form.controls.startDate.invalid && this.form.controls.startDate.touched;
   }
 
+  get endDateRequiredErrorVisible(): boolean {
+    return this.form.controls.endDate.invalid && this.form.controls.endDate.touched;
+  }
+
+  get dateRangeErrorVisible(): boolean {
+    return this.dateRangeInvalid || this.dateRangeTooLong;
+  }
+
+  get dateRangeErrorMessage(): string {
+    return this.dateRangeInvalid
+      ? 'Start date must be on or before the end date.'
+      : 'Work orders cannot be longer than 2 months.';
+  }
+
+  get startDateErrorVisible(): boolean {
+    return this.startDateRequiredErrorVisible;
+  }
+
   get endDateErrorVisible(): boolean {
-    return (
-      this.dateRangeInvalid ||
-      this.dateRangeTooLong ||
-      (this.form.controls.endDate.invalid && this.form.controls.endDate.touched)
-    );
+    return this.dateRangeErrorVisible || this.endDateRequiredErrorVisible;
+  }
+
+  get startDateDescriptionId(): string | null {
+    if (this.dateRangeErrorVisible) {
+      return 'date-range-error';
+    }
+
+    return this.startDateRequiredErrorVisible ? 'start-date-error' : null;
+  }
+
+  get endDateDescriptionId(): string | null {
+    if (this.dateRangeErrorVisible) {
+      return 'date-range-error';
+    }
+
+    return this.endDateRequiredErrorVisible ? 'date-range-error' : null;
   }
 
   protected statusChipVariant(status: WorkOrderStatus): ChipVariant {
@@ -146,6 +200,12 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
 
   @HostListener('keydown', ['$event'])
   protected keepFocusInDialog(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.closeOpenDatepicker()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     if (event.key !== 'Tab') {
       return;
     }
@@ -234,12 +294,11 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
       {
         control: this.form.controls.startDate,
         id: 'start-date',
-        invalid: this.dateRangeTooLong,
+        invalid: this.dateRangeErrorVisible,
       },
       {
         control: this.form.controls.endDate,
         id: 'end-date',
-        invalid: this.dateRangeInvalid,
       },
     ];
 
@@ -259,6 +318,22 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
   private focusStartDate(): void {
     this.startDateRef?.nativeElement.scrollIntoView({ block: 'center' });
     this.startDateRef?.nativeElement.focus();
+  }
+
+  private closeOpenDatepicker(): boolean {
+    if (this.startPicker?.isOpen()) {
+      this.startPicker.close();
+      this.startDateRef?.nativeElement.focus();
+      return true;
+    }
+
+    if (this.endPicker?.isOpen()) {
+      this.endPicker.close();
+      this.endDateRef?.nativeElement.focus();
+      return true;
+    }
+
+    return false;
   }
 
   private getFocusableElements(): HTMLElement[] {

@@ -711,3 +711,25 @@ reproducing full assistant answers.
      **Change:** Tried preserving the current viewport center date across Day, Week, and Month
      switches, but rolled it back because it made the navigation feel less predictable. Timescale
      changes now use the previous behavior and recenter on the current date.
+
+113. Can changing the timeline scale keep the same centered period instead of returning to the
+     current date?
+
+     **Change:** Scale changes now preserve a navigation anchor date separately from the visual
+     period center. Day centers the same anchor date, Week visually centers the containing week,
+     and Month visually centers the containing month without losing the original anchor when
+     switching back. The timeline adds enough temporary range before or after the target period so
+     it can remain centered even when it would otherwise sit at the edge of the default range.
+
+114. Can the visible header/work-order jump be reduced when changing scale?
+
+     **Change:** Scale changes preserve the viewport midpoint consistently across Day, Week, and
+     Month. The scale-change render now suppresses temporary scroll expansion and disables browser
+     scroll anchoring so headers and work orders avoid the brief old-scroll-position blip.
+
+115. Can the timeline remember where I was after refreshing the page?
+
+     **Change:** The schedule now persists the current viewport center date in localStorage while
+     the user scrolls or changes timescale. On reload, it restores the saved timescale and recenters
+     the viewport on the saved date or matching week/month period, extending the temporary timeline
+     range if needed.

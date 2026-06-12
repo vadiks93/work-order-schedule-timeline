@@ -191,6 +191,7 @@ $font-size-compact: 0.6875rem;
 
   &__viewport {
     overflow: auto;
+    overflow-anchor: none;
     outline: 0;
     scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
   }

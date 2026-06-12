@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -66,10 +67,12 @@ type MenuDirection = 'left' | 'right';
 })
 export class WorkOrderScheduleComponent implements AfterViewInit {
   private readonly timescaleStorageKey = 'work-order-schedule-timescale';
+  private readonly viewportCenterStorageKey = 'work-order-schedule-viewport-center';
   private readonly createPreviewWidth = 86;
   private readonly menuWidth = 160;
   private readonly expandDelay = 700;
   private readonly expandThreshold = 180;
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   @ViewChild('timelineViewport')
   private timelineViewport?: ElementRef<HTMLDivElement>;
@@ -97,7 +100,10 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   private menuTrigger: HTMLElement | null = null;
   private focusCreatedOrderAction = false;
   private expandTimer: ReturnType<typeof setTimeout> | null = null;
+  private persistViewportTimer: ReturnType<typeof setTimeout> | null = null;
   private afterExpand: (() => void) | null = null;
+  private suppressTimelineExpansion = false;
+  private viewportAnchorDate: Date | null = null;
 
   protected readonly timeline = computed<TimelineConfig>(() =>
     this.createTimeline(this.timescale(), this.timelineExtension()),
@@ -118,7 +124,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   );
 
   ngAfterViewInit(): void {
-    this.scheduleCenterOnToday();
+    this.restoreViewportPosition();
   }
 
   @HostListener('document:keydown.escape')
@@ -140,11 +146,20 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     if (!value) {
       return;
     }
+    const anchorDate = this.viewportAnchorDate ?? this.currentViewportCenterDate();
+    const centerDate = this.centerDateForScale(anchorDate, value);
+    this.viewportAnchorDate = anchorDate;
     this.timescale.set(value);
     this.storeTimescale(value);
     this.hoverPreview.set(null);
-    this.resetTimelineExpansion();
-    this.scheduleCenterOnToday();
+    this.resetTimelineExpansion(this.timelineExtensionForDate(value, centerDate));
+    this.suppressTimelineExpansion = true;
+    this.changeDetector.detectChanges();
+    this.centerOnDate(centerDate);
+    this.storeViewportCenterDate(anchorDate);
+    requestAnimationFrame(() => {
+      this.suppressTimelineExpansion = false;
+    });
   }
 
   protected clearWorkOrders(): void {
@@ -299,6 +314,12 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   }
 
   protected handleTimelineScroll(): void {
+    if (this.suppressTimelineExpansion) {
+      return;
+    }
+
+    this.queueViewportCenterPersistence();
+
     const viewport = this.timelineViewport?.nativeElement;
     if (!viewport || viewport.scrollWidth <= viewport.clientWidth) {
       return;
@@ -897,13 +918,13 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     return columnsByScale[this.timescale()];
   }
 
-  private resetTimelineExpansion(): void {
+  private resetTimelineExpansion(extension: TimelineExtension = { before: 0, after: 0 }): void {
     if (this.expandTimer) {
       clearTimeout(this.expandTimer);
       this.expandTimer = null;
     }
     this.afterExpand = null;
-    this.timelineExtension.set({ before: 0, after: 0 });
+    this.timelineExtension.set(extension);
   }
 
   private clampedPreviewLeft(preview: HoverPreview): number {
@@ -1049,6 +1070,20 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     localStorage.setItem(this.timescaleStorageKey, value);
   }
 
+  private readStoredViewportCenterDate(): Date | null {
+    const storedValue = localStorage.getItem(this.viewportCenterStorageKey);
+    if (!storedValue || !/^\d{4}-\d{2}-\d{2}$/.test(storedValue)) {
+      return null;
+    }
+
+    const date = new Date(`${storedValue}T12:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private storeViewportCenterDate(date: Date): void {
+    localStorage.setItem(this.viewportCenterStorageKey, this.toIso(date));
+  }
+
   private isTimescale(value: string | null): value is Timescale {
     return value === 'day' || value === 'week' || value === 'month';
   }
@@ -1072,12 +1107,113 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
     return today;
   }
 
+  private currentViewportCenterDate(): Date {
+    const viewport = this.timelineViewport?.nativeElement;
+    if (!viewport || viewport.clientWidth === 0) {
+      return new Date();
+    }
+
+    return this.dateAtPosition(viewport.scrollLeft + viewport.clientWidth / 2);
+  }
+
+  private centerDateForScale(date: Date, scale: Timescale): Date {
+    const target = this.atNoon(date);
+
+    if (scale === 'week') {
+      return this.addDays(this.startOfWeek(target), 3);
+    }
+
+    if (scale === 'month') {
+      return this.middleOfMonth(target);
+    }
+
+    return target;
+  }
+
+  private timelineExtensionForDate(timescale: Timescale, date: Date): TimelineExtension {
+    const today = this.atNoon(new Date());
+    const baseRange: Record<Timescale, number> = {
+      day: 14,
+      week: 8,
+      month: 6,
+    };
+    const range = baseRange[timescale];
+    const visibleBuffer = this.visibleUnitBuffer(timescale);
+    let unitDelta: number;
+
+    if (timescale === 'day') {
+      unitDelta = this.dayDistance(today, date);
+    } else if (timescale === 'week') {
+      unitDelta = Math.floor(
+        this.dayDistance(this.startOfWeek(today), this.startOfWeek(date)) / 7,
+      );
+    } else {
+      unitDelta =
+        (date.getFullYear() - today.getFullYear()) * 12 + date.getMonth() - today.getMonth();
+    }
+
+    const targetIndex = range + unitDelta;
+    const lastIndex = range * 2;
+
+    return {
+      before: Math.max(0, visibleBuffer - targetIndex),
+      after: Math.max(0, targetIndex + visibleBuffer - lastIndex),
+    };
+  }
+
+  private visibleUnitBuffer(timescale: Timescale): number {
+    const viewportWidth = this.timelineViewport?.nativeElement.clientWidth ?? 0;
+    const columnWidth: Record<Timescale, number> = {
+      day: 72,
+      week: 124,
+      month: 150,
+    };
+
+    return Math.ceil(viewportWidth / (2 * columnWidth[timescale]));
+  }
+
+  private dayDistance(from: Date, to: Date): number {
+    return Math.floor((this.atNoon(to).getTime() - this.atNoon(from).getTime()) / 86_400_000);
+  }
+
+  private middleOfMonth(date: Date): Date {
+    const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    return this.addDays(new Date(date.getFullYear(), date.getMonth(), 1, 12), daysInMonth / 2);
+  }
+
   private scheduleCenterOnToday(): void {
     this.scheduleCenterOnDate(new Date());
   }
 
   private scheduleCenterOnDate(date: Date): void {
-    setTimeout(() => this.centerOnDate(date));
+    this.viewportAnchorDate = this.atNoon(date);
+    setTimeout(() => {
+      this.centerOnDate(date);
+      this.storeViewportCenterDate(date);
+    });
+  }
+
+  private restoreViewportPosition(): void {
+    const storedCenterDate = this.readStoredViewportCenterDate();
+    this.viewportAnchorDate = storedCenterDate ? this.atNoon(storedCenterDate) : new Date();
+    const centerDate = storedCenterDate
+      ? this.centerDateForScale(storedCenterDate, this.timescale())
+      : new Date();
+
+    this.resetTimelineExpansion(this.timelineExtensionForDate(this.timescale(), centerDate));
+    this.scheduleCenterOnDate(centerDate);
+  }
+
+  private queueViewportCenterPersistence(): void {
+    if (this.persistViewportTimer) {
+      clearTimeout(this.persistViewportTimer);
+    }
+
+    this.persistViewportTimer = setTimeout(() => {
+      this.persistViewportTimer = null;
+      this.viewportAnchorDate = this.currentViewportCenterDate();
+      this.storeViewportCenterDate(this.viewportAnchorDate);
+    }, 150);
   }
 
   private centerOnDate(date: Date): void {
@@ -1086,15 +1222,25 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
       return;
     }
 
-    const target = this.positionForDate(date) - viewport.clientWidth / 2;
+    const target = this.centerPositionForDate(date) - viewport.clientWidth / 2;
     const maximum = Math.max(0, this.canvasWidth() - viewport.clientWidth);
     viewport.scrollLeft = Math.min(Math.max(0, target), maximum);
   }
 
+  private centerPositionForDate(date: Date): number {
+    if (this.timescale() === 'week') {
+      return this.positionForDate(this.addDays(this.startOfWeek(date), 3.5));
+    }
+
+    if (this.timescale() === 'month') {
+      return this.positionForDate(this.middleOfMonth(date));
+    }
+
+    return this.positionForDate(date) + this.timeline().columnWidth / 2;
+  }
+
   private addDays(date: Date, days: number): Date {
-    const copy = this.atNoon(date);
-    copy.setDate(copy.getDate() + days);
-    return copy;
+    return new Date(this.atNoon(date).getTime() + days * 86_400_000);
   }
 
   private atNoon(date: Date): Date {

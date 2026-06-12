@@ -69,16 +69,15 @@ $font-size-compact: 0.6875rem;
   &__label {
     display: flex;
     align-items: center;
-    padding: 0 7px;
+    padding: 0 8px;
     background: var(--color-surface-label);
     color: var(--color-muted-strong);
     font-size: $font-size-compact;
     font-weight: 500;
-    line-height: 1;
   }
 
   &__select {
-    width: clamp(78px, 5vw, 92px);
+    width: clamp(72px, 4.7vw, 86px);
   }
 }
 
@@ -90,12 +89,12 @@ $font-size-compact: 0.6875rem;
     border-radius: 0 6px 6px 0;
     color: var(--color-primary-text);
     font-size: $font-size-compact;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .timescale__select.ng-select .ng-value-container {
-    align-items: center;
-    padding-left: 7px;
+    justify-content: center;
+    padding-left: 6px;
   }
 
   .timescale__select.ng-select .ng-arrow-wrapper {
@@ -121,7 +120,7 @@ $font-size-compact: 0.6875rem;
   }
 
   .timescale__select.ng-select .ng-dropdown-panel {
-    left: -72px;
+    left: -76px;
     width: 200px;
     margin-top: 4px;
     border-color: var(--color-border-control);

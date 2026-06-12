@@ -1,21 +1,3 @@
-@font-face {
-  font-family: 'Circular-Std';
-  font-style: normal;
-  font-weight: 400;
-  src: url('https://naologic-com-assets.naologic.com/fonts/circular-std/CircularStd-Book.woff2')
-    format('woff2');
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Circular-Std';
-  font-style: normal;
-  font-weight: 600;
-  src: url('https://naologic-com-assets.naologic.com/fonts/circular-std/CircularStd-Medium.woff2')
-    format('woff2');
-  font-display: swap;
-}
-
 :root {
   --app-gutter: clamp(32px, 6.5vw, 140px);
   --timeline-row-height: clamp(44px, calc(38px + 0.78125vw), 68px);
@@ -96,7 +78,7 @@
   --color-input-shadow: rgb(18 29 63 / 8%);
   --color-backdrop: rgb(243 245 250 / 55%);
 
-  font-family: 'Circular-Std', Inter, Arial, sans-serif;
+  font-family: 'Circular-Std', 'Circular Std', CircularStd, Inter, Arial, sans-serif;
   color-scheme: light;
   font-synthesis: none;
 }
@@ -111,6 +93,7 @@ body {
 body {
   min-height: 100vh;
   background: var(--color-white);
+  font-family: inherit;
   font-size: 14px;
   letter-spacing: normal;
 }
@@ -157,15 +140,32 @@ textarea {
 }
 
 .timeline .work-order.work-order--overflowing .work-order__content {
-  width: max-content;
+  width: var(--work-order-content-width);
   min-width: 100%;
   overflow: visible;
 }
 
 .timeline .work-order.work-order--overflowing .work-order__name {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   overflow: visible;
   text-overflow: clip;
+}
+
+.timeline .work-order.work-order--overflowing .work-order__status,
+.timeline .work-order.work-order--overflowing .work-order__menu-button {
+  position: relative;
+  z-index: 1;
+}
+
+.timeline .work-order.work-order--tooltip-only .work-order__status,
+.timeline .work-order.work-order--tooltip-only:is(:hover, :focus-within) .work-order__status {
+  display: none !important;
+}
+
+.timeline .work-order .work-order__name {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .schedule__controls {
@@ -174,7 +174,16 @@ textarea {
   gap: 8px;
 }
 
+.timescale__label {
+  box-sizing: border-box;
+  justify-content: center;
+  width: 76px;
+}
+
 .schedule__toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 28px;
   padding: 0 10px;
   border: 0;
@@ -200,48 +209,6 @@ textarea {
   cursor:
     url('/pointing-cursor.svg') 9 8,
     pointer;
-}
-
-.schedule__help {
-  position: relative;
-}
-
-.schedule__help-button {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--color-border-control);
-  border-radius: 50%;
-  background: linear-gradient(180deg, var(--color-white), var(--color-surface-label));
-  color: var(--color-primary-text);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1;
-  box-shadow: 0 1px 3px var(--color-toolbar-shadow);
-  cursor: help;
-}
-
-.schedule__help-button:is(:hover, :focus-visible) {
-  border-color: var(--color-primary);
-  color: var(--color-primary-action);
-}
-
-.schedule__help app-floating-label {
-  top: 50%;
-  right: calc(100% + 8px);
-  bottom: auto;
-  left: auto;
-  transform: translateY(-50%);
-}
-
-.schedule__help .floating-label {
-  width: 250px;
-  white-space: normal;
-}
-
-.schedule__help:is(:hover, :focus-within) .floating-label--tooltip {
-  opacity: 1;
 }
 
 .timeline .timeline__row:has(.work-order__menu) {

@@ -66,7 +66,7 @@ type MenuDirection = 'left' | 'right';
 })
 export class WorkOrderScheduleComponent implements AfterViewInit {
   private readonly timescaleStorageKey = 'work-order-schedule-timescale';
-  private readonly createPreviewWidth = 100;
+  private readonly createPreviewWidth = 86;
   private readonly menuWidth = 160;
   private readonly expandDelay = 700;
   private readonly expandThreshold = 180;
@@ -166,9 +166,14 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
 
   protected orderStyle(order: WorkOrderDocument): Record<string, string> {
     const { left, width } = this.orderPosition(order);
+    const contentWidth = this.shouldOverflowOrder(order)
+      ? Math.max(width, this.estimatedOrderContentWidth(order))
+      : width;
+
     return {
       left: `${left}px`,
       width: `${width}px`,
+      '--work-order-content-width': `${contentWidth}px`,
     };
   }
 
@@ -208,10 +213,10 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   }
 
   private nextOrderLeft(order: WorkOrderDocument): number {
-    const currentLeft = this.orderPosition(order).left;
+    const currentLeft = this.rawOrderPosition(order).left;
     const nextLeft = this.ordersFor(order.data.workCenterId)
       .filter((candidate) => candidate.docId !== order.docId)
-      .map((candidate) => this.orderPosition(candidate).left)
+      .map((candidate) => this.rawOrderPosition(candidate).left)
       .filter((left) => left > currentLeft)
       .sort((first, second) => first - second)[0];
 
@@ -226,6 +231,17 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   }
 
   private orderPosition(order: WorkOrderDocument): { left: number; width: number } {
+    const { left, width } = this.rawOrderPosition(order);
+    const nextLeft = this.nextOrderLeft(order);
+    const visibleRight = Math.min(left + width, nextLeft);
+
+    return {
+      left,
+      width: Math.max(1, visibleRight - left),
+    };
+  }
+
+  private rawOrderPosition(order: WorkOrderDocument): { left: number; width: number } {
     const left = Math.max(0, this.positionForIso(order.data.startDate));
     const dayAfterEnd = new Date(`${order.data.endDate}T12:00:00`);
     dayAfterEnd.setDate(dayAfterEnd.getDate() + 1);
@@ -500,7 +516,7 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
       return;
     }
     setTimeout(() => {
-      this.panelTrigger?.focus();
+      this.panelTrigger?.focus({ preventScroll: true });
       this.panelTrigger = null;
     });
   }
@@ -1057,16 +1073,20 @@ export class WorkOrderScheduleComponent implements AfterViewInit {
   }
 
   private scheduleCenterOnToday(): void {
-    setTimeout(() => this.centerOnToday());
+    this.scheduleCenterOnDate(new Date());
   }
 
-  private centerOnToday(): void {
+  private scheduleCenterOnDate(date: Date): void {
+    setTimeout(() => this.centerOnDate(date));
+  }
+
+  private centerOnDate(date: Date): void {
     const viewport = this.timelineViewport?.nativeElement;
     if (!viewport || viewport.clientWidth === 0) {
       return;
     }
 
-    const target = this.positionForDate(new Date()) - viewport.clientWidth / 2;
+    const target = this.positionForDate(date) - viewport.clientWidth / 2;
     const maximum = Math.max(0, this.canvasWidth() - viewport.clientWidth);
     viewport.scrollLeft = Math.min(Math.max(0, target), maximum);
   }

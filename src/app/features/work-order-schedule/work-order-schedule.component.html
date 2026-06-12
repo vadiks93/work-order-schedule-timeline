@@ -43,19 +43,6 @@
         day. Use Arrow Up and Arrow Down to move that selection between work centers. Press Enter
         to create from the selected range. Double click a work order to edit it.
       </p>
-      <div class="schedule__help">
-        <button
-          class="schedule__help-button"
-          type="button"
-          aria-label="Show timeline keyboard and mouse help"
-        >
-          <span aria-hidden="true">?</span>
-        </button>
-        <app-floating-label
-          mode="tooltip"
-          label="Tab moves through rows and existing work orders. Arrows move the create selection by day or work center. Enter creates. Double click edits."
-        />
-      </div>
     </div>
 
     <section
@@ -147,6 +134,7 @@
                 <li
                   class="work-order"
                   [class]="'work-order work-order--' + order.data.status + (shouldOverflowOrder(order) ? ' work-order--overflowing' : '')"
+                  [class.work-order--tooltip-only]="shouldShowTooltip(order)"
                   [ngStyle]="orderStyle(order)"
                   (dblclick)="edit($event, order)"
                   [attr.aria-label]="

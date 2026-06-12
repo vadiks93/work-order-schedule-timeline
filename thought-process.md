@@ -696,3 +696,18 @@ reproducing full assistant answers.
 
      **Change:** Persisted the selected Day, Week, or Month timescale in localStorage and restored
      it on reload with a validated Day fallback for missing or invalid stored values.
+
+111. Can overlap errors focus the start date, and can work orders longer than two months show a
+     validation error?
+
+     **Change:** When the schedule detects an overlap, the create/edit panel now focuses the
+     Start date field. The panel also allows users to enter long ranges but blocks submission when
+     the selected end date is more than two calendar months after the start date, marking both date
+     inputs invalid and focusing Start date so the range can be adjusted.
+
+112. Can changing the timeline scale preserve the date currently in view instead of jumping back
+     to today?
+
+     **Change:** Tried preserving the current viewport center date across Day, Week, and Month
+     switches, but rolled it back because it made the navigation feel less predictable. Timescale
+     changes now use the previous behavior and recenter on the current date.

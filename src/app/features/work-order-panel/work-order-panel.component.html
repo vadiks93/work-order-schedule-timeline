@@ -84,6 +84,7 @@
       <label class="form-field__label" for="start-date">Start date</label>
       <div class="date-control">
         <input
+          #startDateInput
           class="form-field__control"
           id="start-date"
           placeholder="dd.mm.yyyy"
@@ -106,7 +107,9 @@
       </div>
       <div class="form-field__error-slot">
         @if (startDateErrorVisible) {
-          <span class="form-field__error" id="start-date-error">Enter a start date.</span>
+          <span class="form-field__error" id="start-date-error">
+            Enter a start date.
+          </span>
         }
       </div>
     </div>
@@ -141,7 +144,9 @@
             {{
               dateRangeInvalid
                 ? 'End date must be on or after the start date.'
-                : 'Enter an end date.'
+                : dateRangeTooLong
+                  ? 'Work orders cannot be longer than 2 months.'
+                  : 'Enter an end date.'
             }}
           </span>
         }
@@ -150,7 +155,7 @@
 
     @if (overlapError) {
       <div class="work-order-panel__alert" role="alert">
-        This work order overlaps another order in the selected work center.
+        This work order overlaps another order in the selected work center. Please adjust the Start or End Date
       </div>
     }
   </form>

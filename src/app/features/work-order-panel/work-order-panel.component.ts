@@ -58,6 +58,7 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
   @Output() readonly saved = new EventEmitter<WorkOrderDraft>();
 
   @ViewChild('workOrderName') workOrderNameRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('startDateInput') startDateRef?: ElementRef<HTMLInputElement>;
 
   private readonly hostElement: HTMLElement;
 
@@ -93,6 +94,17 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
     return !!start && !!end && this.toIso(end) < this.toIso(start);
   }
 
+  get dateRangeTooLong(): boolean {
+    const start = this.form.controls.startDate.value;
+    const end = this.form.controls.endDate.value;
+
+    if (!start || !end || this.dateRangeInvalid) {
+      return false;
+    }
+
+    return this.toDate(end) > this.addMonths(this.toDate(start), 2);
+  }
+
   get nameErrorVisible(): boolean {
     return this.form.controls.name.invalid && this.form.controls.name.touched;
   }
@@ -104,6 +116,7 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
   get endDateErrorVisible(): boolean {
     return (
       this.dateRangeInvalid ||
+      this.dateRangeTooLong ||
       (this.form.controls.endDate.invalid && this.form.controls.endDate.touched)
     );
   }
@@ -120,6 +133,10 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
       changes['initialWorkCenterId']
     ) {
       this.populateForm();
+    }
+
+    if (changes['overlapError']?.currentValue === true) {
+      setTimeout(() => this.focusStartDate());
     }
   }
 
@@ -154,7 +171,7 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
 
   submit(): void {
     this.form.markAllAsTouched();
-    if (this.form.invalid || this.dateRangeInvalid) {
+    if (this.form.invalid || this.dateRangeInvalid || this.dateRangeTooLong) {
       setTimeout(() => this.focusFirstInvalidControl());
       return;
     }
@@ -194,6 +211,16 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
     return `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
   }
 
+  private toDate(date: NgbDateStruct): Date {
+    return new Date(date.year, date.month - 1, date.day, 12);
+  }
+
+  private addMonths(date: Date, months: number): Date {
+    const copy = new Date(date);
+    copy.setMonth(copy.getMonth() + months);
+    return copy;
+  }
+
   private addDays(isoDate: string, days: number): string {
     const date = isoDate ? new Date(`${isoDate}T12:00:00`) : new Date();
     date.setDate(date.getDate() + days);
@@ -204,8 +231,16 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
     const controlIds = [
       { control: this.form.controls.name, id: 'work-order-name' },
       { control: this.form.controls.status, id: 'work-order-status' },
-      { control: this.form.controls.startDate, id: 'start-date' },
-      { control: this.form.controls.endDate, id: 'end-date', invalid: this.dateRangeInvalid },
+      {
+        control: this.form.controls.startDate,
+        id: 'start-date',
+        invalid: this.dateRangeTooLong,
+      },
+      {
+        control: this.form.controls.endDate,
+        id: 'end-date',
+        invalid: this.dateRangeInvalid,
+      },
     ];
 
     const firstInvalid = controlIds.find(
@@ -219,6 +254,11 @@ export class WorkOrderPanelComponent implements OnChanges, AfterViewInit {
     const target = this.hostElement.querySelector<HTMLElement>(`#${firstInvalid.id}`);
     target?.scrollIntoView({ block: 'center' });
     target?.focus();
+  }
+
+  private focusStartDate(): void {
+    this.startDateRef?.nativeElement.scrollIntoView({ block: 'center' });
+    this.startDateRef?.nativeElement.focus();
   }
 
   private getFocusableElements(): HTMLElement[] {

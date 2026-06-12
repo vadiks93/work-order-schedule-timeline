@@ -1,7 +1,7 @@
 :host {
   position: fixed;
   inset: 0 0 0 auto;
-  z-index: 30;
+  z-index: var(--z-modal-panel);
   width: min(590px, 74vw);
   min-width: 470px;
 }
@@ -11,114 +11,140 @@
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  background: #fff;
-  box-shadow: -8px 0 24px rgb(27 35 67 / 14%);
+  background: var(--color-white);
+  box-shadow: -4px 0 12px var(--color-panel-shadow);
   animation: panel-enter 180ms ease-out;
 
   &__header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 24px;
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid #e4e8f2;
+    gap: 20px;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--color-border-panel);
   }
 
   &__title {
     margin: 0 0 4px;
-    color: #242c52;
-    font-size: 21px;
+    color: var(--color-panel-title);
+    font-size: 20px;
     font-weight: 600;
   }
 
   &__description {
     margin: 0;
-    color: #65709a;
-    font-size: 15px;
+    color: var(--color-muted-label);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &__required-note {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
   }
 
   &__actions {
     display: flex;
     flex: 0 0 auto;
-    gap: 8px;
+    gap: 7px;
   }
 
   &__form {
     display: grid;
-    gap: 22px;
-    padding: 26px 24px;
+    gap: 6px;
+    padding: 18px 22px;
   }
 
   &__alert {
-    padding: 12px 14px;
-    border: 1px solid #efb5b5;
+    padding: 10px 12px;
+    border: 1px solid var(--color-error-border);
     border-radius: 6px;
-    background: #fff3f3;
-    color: #a32929;
-    font-size: 14px;
+    background: var(--color-error-background);
+    color: var(--color-error-text);
+    font-size: 13px;
   }
 }
 
 .button {
-  min-height: 36px;
-  padding: 0 12px;
+  min-height: 34px;
+  padding: 0 10px;
   border: 1px solid transparent;
   border-radius: 7px;
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
 
   &--secondary {
-    border-color: #e1e5ef;
-    background: #fff;
-    color: #252d50;
+    border-color: var(--color-border-control);
+    background: var(--color-white);
+    color: var(--color-control-text);
   }
 
   &--primary {
-    background: #504dff;
-    color: #fff;
-    box-shadow: 0 2px 5px rgb(80 77 255 / 28%);
+    background: var(--color-primary);
+    color: var(--color-white);
+    box-shadow: 0 2px 5px var(--color-primary-shadow);
   }
 }
 
 .form-field {
   display: grid;
-  gap: 7px;
+  gap: 2px;
 
   &__label {
-    color: #65709a;
-    font-size: 13px;
+    color: var(--color-muted-label);
+    font-size: 12px;
   }
 
   &__control {
     box-sizing: border-box;
     width: 100%;
     height: 39px;
-    padding: 0 10px;
-    border: 1px solid #ccd4e5;
+    padding: 0 9px;
+    border: 1px solid var(--color-border-input);
     border-radius: 5px;
     outline: 0;
-    color: #1e2748;
+    color: var(--color-input-text);
     font: inherit;
-    box-shadow: 0 1px 2px rgb(18 29 63 / 8%);
+    box-shadow: 0 1px 2px var(--color-input-shadow);
 
     &:focus {
-      border-color: #514eff;
-      box-shadow: 0 0 0 3px rgb(81 78 255 / 16%);
+      border-color: var(--color-primary-focus);
+      box-shadow: 0 0 0 3px var(--color-input-focus-shadow);
     }
 
+    &--invalid,
     &[aria-invalid='true'] {
-      border-color: #c94343;
+      border-color: var(--color-error-control);
     }
   }
 
   &__error {
-    color: #b62f2f;
-    font-size: 12px;
+    color: var(--color-error-message);
+    font-size: 11px;
+  }
+
+  &__error-slot {
+    display: flex;
+    align-items: flex-start;
+    height: 24px;
+    overflow: hidden;
   }
 }
 
 .date-control {
   position: relative;
+
+  &--invalid {
+    .form-field__control {
+      border-color: var(--color-error-control);
+    }
+
+    .date-control__button {
+      border-left-color: var(--color-error-control);
+    }
+  }
 
   &__button {
     position: absolute;
@@ -127,10 +153,10 @@
     width: 38px;
     height: 37px;
     border: 0;
-    border-left: 1px solid #e1e5ef;
+    border-left: 1px solid var(--color-border-control);
     border-radius: 0 5px 5px 0;
-    background: #f8f9fc;
-    color: #596487;
+    background: var(--color-surface-subtle);
+    color: var(--color-muted-calendar);
     cursor: pointer;
   }
 }
@@ -138,15 +164,58 @@
 :host ::ng-deep {
   .ng-select .ng-select-container {
     min-height: 39px;
-    border-color: #ccd4e5;
+    border-color: var(--color-border-input);
     border-radius: 5px;
-    color: #1e2748;
-    box-shadow: 0 1px 2px rgb(18 29 63 / 8%);
+    color: var(--color-input-text);
+    box-shadow: 0 1px 2px var(--color-input-shadow);
   }
 
   .ng-select.ng-select-focused:not(.ng-select-opened) > .ng-select-container {
-    border-color: #514eff;
-    box-shadow: 0 0 0 3px rgb(81 78 255 / 16%);
+    border-color: var(--color-primary-focus);
+    box-shadow: 0 0 0 3px var(--color-input-focus-shadow);
+  }
+
+  .form-field__status-select {
+    .ng-value-container,
+    .ng-option {
+      align-items: center;
+    }
+
+    .ng-option {
+      display: flex;
+      min-height: 30px;
+      padding: 5px 10px;
+      color: var(--color-input-text);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 18px;
+      letter-spacing: normal;
+    }
+
+    .ng-option.ng-option-selected {
+      background: var(--color-white);
+      color: var(--color-input-text);
+      font-weight: 400;
+    }
+
+    .ng-option.ng-option-marked {
+      background: var(--color-surface-option-hover);
+      color: var(--color-primary-action);
+    }
+  }
+
+  .ng-select .ng-dropdown-panel .ng-option {
+    min-height: 30px;
+    padding: 5px 10px;
+    color: var(--color-input-text);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 18px;
+    letter-spacing: 0;
+
+    &.ng-option-marked {
+      color: var(--color-primary-action);
+    }
   }
 }
 

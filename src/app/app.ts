@@ -7,6 +7,7 @@ import { WorkOrderScheduleComponent } from './features/work-order-schedule/work-
   selector: 'app-root',
   imports: [AppHeaderComponent, WorkOrderScheduleComponent, AppFooterComponent],
   templateUrl: './app.html',
+  styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {}

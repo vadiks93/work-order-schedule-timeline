@@ -4,12 +4,12 @@
 }
 
 .app-header {
-  background: #fff;
+  background: var(--color-white);
 
   &__content {
     box-sizing: border-box;
-    width: min(1280px, calc(100% - 80px));
-    min-width: 720px;
+    width: calc(100% - (var(--app-gutter) * 2));
+    min-width: calc(800px - (var(--app-gutter) * 2));
     margin: 0 auto;
     padding-top: 20px;
   }
@@ -18,11 +18,5 @@
     display: block;
     width: 81px;
     height: auto;
-  }
-}
-
-@media (max-width: 899px) {
-  .app-header__content {
-    width: 720px;
   }
 }

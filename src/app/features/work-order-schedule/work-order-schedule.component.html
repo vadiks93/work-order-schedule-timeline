@@ -1,30 +1,54 @@
-<main class="schedule">
+<div class="schedule">
   <div class="schedule__content">
     <a class="schedule__skip-link" href="#timeline-grid">Skip to timeline</a>
 
     <h1 class="schedule__title">Work Orders</h1>
 
     <div class="schedule__toolbar">
-      <label class="timescale" for="timescale">
-        <span class="timescale__label">Timescale</span>
-        <select
-          class="timescale__select"
-          id="timescale"
-          [value]="timescale()"
-          (change)="setTimescale($any($event.target).value)"
+      <div class="schedule__controls">
+        <div class="timescale">
+          <span class="timescale__label">Timescale</span>
+          <ng-select
+            class="timescale__select"
+            inputId="timescale"
+            aria-label="Timeline timescale"
+            [items]="timescaleOptions"
+            bindLabel="label"
+            bindValue="value"
+            [clearable]="false"
+            [searchable]="false"
+            [ngModel]="timescale()"
+            (ngModelChange)="setTimescale($event)"
+          />
+        </div>
+        <button
+          class="schedule__toolbar-button"
+          type="button"
+          (click)="scrollToCurrentDate()"
         >
-          @for (scale of timescales; track scale) {
-            <option [value]="scale">{{ scale[0].toUpperCase() + scale.slice(1) }}</option>
-          }
-        </select>
-      </label>
-      <p class="schedule__hint" id="timeline-instructions">
-        Select an empty point to create an order. Use Tab to reach order actions.
+          Today
+        </button>
+        <button
+          class="schedule__toolbar-button"
+          type="button"
+          [disabled]="store.orderCount() === 0"
+          (click)="clearWorkOrders()"
+        >
+          Clear work orders
+        </button>
+      </div>
+      <p class="sr-only" id="timeline-instructions">
+        Select an empty point to create an order. Use Tab and Shift Tab to move between rows and
+        work-order actions. Use Arrow Right and Arrow Left to move a new-order selection by one
+        day. Use Arrow Up and Arrow Down to move that selection between work centers. Press Enter
+        to create from the selected range. Double click a work order to edit it.
       </p>
     </div>
 
     <section
       class="timeline"
+      [class.timeline--menu-open]="openMenuId()"
+      [class.timeline--previewing]="hoverPreview()"
       id="timeline-grid"
       aria-label="Work order schedule"
       aria-describedby="timeline-instructions"
@@ -36,13 +60,26 @@
         }
       </div>
 
-      <div class="timeline__viewport" tabindex="0" aria-label="Scrollable timeline">
+      <div
+        class="timeline__viewport"
+        #timelineViewport
+        tabindex="0"
+        aria-label="Scrollable timeline"
+        (scroll)="handleTimelineScroll()"
+      >
         <div class="timeline__canvas" [style.width.px]="canvasWidth()">
           <div
-            class="timeline__today-line"
-            [style.left.px]="todayPosition()"
+            class="timeline__current-period"
+            [style.left.px]="currentPeriodPosition()"
             aria-hidden="true"
           ></div>
+          <app-chip
+            class="timeline__current-period-label"
+            variant="current"
+            [label]="currentPeriodLabel()"
+            [style.left.px]="currentPeriodPosition()"
+            aria-hidden="true"
+          />
 
           <div class="timeline__header">
             @for (column of timeline().columns; track column.date.getTime()) {
@@ -55,29 +92,51 @@
             }
           </div>
 
-          @for (center of store.workCenters(); track center.docId) {
-            <div class="timeline__row">
-              <div class="timeline__grid-lines" aria-hidden="true">
-                @for (column of timeline().columns; track column.date.getTime()) {
-                  <span
-                    class="timeline__grid-cell"
-                    [style.width.px]="timeline().columnWidth"
-                  ></span>
-                }
-              </div>
+          <div class="timeline__background-grid" aria-hidden="true">
+            @for (column of timeline().columns; track column.date.getTime()) {
+              <span
+                class="timeline__background-column"
+                [style.width.px]="timeline().columnWidth"
+              ></span>
+            }
+          </div>
 
+          @for (center of store.workCenters(); track center.docId) {
+            <ol
+              class="timeline__row"
+              [class.timeline__row--selected]="selectedWorkCenterId() === center.docId"
+              [class.timeline__row--previewing]="hoverPreview()?.workCenterId === center.docId"
+              (click)="createFromPointer($event, center.docId)"
+              (pointermove)="updateHoverPreview($event, center.docId)"
+              (pointerleave)="clearHoverPreview()"
+            >
               <button
                 class="timeline__create-button"
                 type="button"
                 [attr.aria-label]="'Create a work order for ' + center.data.name"
-                (click)="createFromPointer($event, center.docId)"
+                (click)="handleCreateButtonClick($event, center.docId)"
+                (keydown)="handleCreateButtonKeydown($event, center.docId)"
               ></button>
 
+              @if (hoverPreview(); as preview) {
+                @if (preview.workCenterId === center.docId) {
+                  <div
+                    class="timeline__create-preview"
+                    [ngStyle]="previewStyle(preview)"
+                    aria-hidden="true"
+                  >
+                    <app-floating-label label="Click to add dates" />
+                  </div>
+                }
+              }
+
               @for (order of ordersFor(center.docId); track order.docId) {
-                <article
+                <li
                   class="work-order"
-                  [class]="'work-order work-order--' + order.data.status"
+                  [class]="'work-order work-order--' + order.data.status + (shouldOverflowOrder(order) ? ' work-order--overflowing' : '')"
+                  [class.work-order--tooltip-only]="shouldShowTooltip(order)"
                   [ngStyle]="orderStyle(order)"
+                  (dblclick)="edit($event, order)"
                   [attr.aria-label]="
                     order.data.name +
                     ', ' +
@@ -88,43 +147,75 @@
                     formatAccessibleDate(order.data.endDate)
                   "
                 >
-                  <span class="work-order__name">{{ order.data.name }}</span>
-                  <span class="work-order__status">{{ statusLabels[order.data.status] }}</span>
+                  <div class="work-order__content">
+                    <span class="work-order__name">{{ order.data.name }}</span>
+                    <app-chip
+                      class="work-order__status"
+                      size="timeline"
+                      [variant]="statusChipVariant(order.data.status)"
+                      [label]="statusLabels[order.data.status]"
+                    />
                   <button
                     class="work-order__menu-button"
                     type="button"
+                    [attr.data-order-id]="order.docId"
                     [attr.aria-expanded]="openMenuId() === order.docId"
                     [attr.aria-controls]="'menu-' + order.docId"
                     [attr.aria-label]="'Actions for ' + order.data.name"
                     (click)="toggleMenu($event, order.docId)"
+                    (keydown)="handleWorkOrderActionKeydown($event, order)"
+                    (dblclick)="$event.stopPropagation()"
                   >
                     <span aria-hidden="true">•••</span>
                   </button>
 
+                  </div>
+
+                  @if (shouldShowTooltip(order)) {
+                    <app-floating-label
+                      mode="tooltip"
+                      align="start"
+                      [label]="tooltipText(order)"
+                    />
+                  }
+
                   @if (openMenuId() === order.docId) {
                     <div
                       class="work-order__menu"
+                      [class.work-order__menu--right]="openMenuDirection() === 'right'"
                       [id]="'menu-' + order.docId"
                       role="menu"
                       (click)="$event.stopPropagation()"
+                      (dblclick)="$event.stopPropagation()"
+                      (keydown)="handleMenuKeydown($event)"
                     >
-                      <button type="button" role="menuitem" (click)="edit($event, order)">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        tabindex="-1"
+                        (click)="edit($event, order)"
+                      >
                         Edit
                       </button>
-                      <button type="button" role="menuitem" (click)="delete($event, order)">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        tabindex="-1"
+                        (click)="delete($event, order)"
+                      >
                         Delete
                       </button>
                     </div>
                   }
-                </article>
+                </li>
               }
-            </div>
+            </ol>
           }
         </div>
       </div>
     </section>
   </div>
-</main>
+</div>
 
 @if (panelOpen()) {
   <button
@@ -138,6 +229,7 @@
     [order]="editingOrder()"
     [initialWorkCenterId]="initialWorkCenterId()"
     [initialStartDate]="initialStartDate()"
+    [initialEndDate]="initialEndDate()"
     [overlapError]="overlapError()"
     (closed)="closePanel()"
     (saved)="save($event)"

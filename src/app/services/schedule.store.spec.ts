@@ -5,6 +5,7 @@ describe('ScheduleStore', () => {
   let store: ScheduleStore;
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({});
     store = TestBed.inject(ScheduleStore);
   });
@@ -37,6 +38,48 @@ describe('ScheduleStore', () => {
     ).toBe(false);
   });
 
+  it('returns the full default range when no later order blocks it', () => {
+    store.workOrders.set([]);
+
+    expect(store.availableEndDate('wc-genesis', '2030-01-01')).toBe('2030-01-07');
+  });
+
+  it('shortens the default range to the day before the next order', () => {
+    store.workOrders.set([
+      {
+        docId: 'next-order',
+        docType: 'workOrder',
+        data: {
+          name: 'Next order',
+          workCenterId: 'wc-genesis',
+          status: 'open',
+          startDate: '2030-01-05',
+          endDate: '2030-01-10',
+        },
+      },
+    ]);
+
+    expect(store.availableEndDate('wc-genesis', '2030-01-01')).toBe('2030-01-04');
+  });
+
+  it('returns no available range when the selected start date is occupied', () => {
+    store.workOrders.set([
+      {
+        docId: 'occupied-order',
+        docType: 'workOrder',
+        data: {
+          name: 'Occupied order',
+          workCenterId: 'wc-genesis',
+          status: 'open',
+          startDate: '2030-01-02',
+          endDate: '2030-01-06',
+        },
+      },
+    ]);
+
+    expect(store.availableEndDate('wc-genesis', '2030-01-04')).toBeNull();
+  });
+
   it('can create, update, and delete an order', () => {
     const initialCount = store.orderCount();
     const draft = {
@@ -56,5 +99,32 @@ describe('ScheduleStore', () => {
 
     store.delete(created.docId);
     expect(store.orderCount()).toBe(initialCount);
+  });
+
+  it('persists work order changes to local storage through the mocked API', async () => {
+    const draft = {
+      name: 'Persisted order',
+      workCenterId: 'wc-genesis',
+      status: 'open' as const,
+      startDate: '2030-02-01',
+      endDate: '2030-02-04',
+    };
+
+    store.create(draft);
+    await Promise.resolve();
+
+    const snapshot = JSON.parse(localStorage.getItem('work-order-schedule-timeline')!);
+    expect(snapshot.workOrders.at(-1).data.name).toBe('Persisted order');
+  });
+
+  it('can clear all work orders and persist the empty schedule', async () => {
+    expect(store.orderCount()).toBeGreaterThan(0);
+
+    store.clearWorkOrders();
+    await Promise.resolve();
+
+    const snapshot = JSON.parse(localStorage.getItem('work-order-schedule-timeline')!);
+    expect(store.orderCount()).toBe(0);
+    expect(snapshot.workOrders).toEqual([]);
   });
 });

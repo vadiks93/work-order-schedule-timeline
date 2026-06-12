@@ -9,7 +9,8 @@
     <div>
       <h2 class="work-order-panel__title" id="work-order-panel-title">Work Order Details</h2>
       <p class="work-order-panel__description" id="work-order-panel-description">
-        Specify the dates, name and status for this order
+        Specify the dates, name and status for this order.
+        <span class="work-order-panel__required-note">All fields are required.</span>
       </p>
     </div>
 
@@ -30,6 +31,7 @@
     <div class="form-field">
       <label class="form-field__label" for="work-order-name">Work Order Name</label>
       <input
+        #workOrderName
         class="form-field__control"
         id="work-order-name"
         type="text"
@@ -37,31 +39,28 @@
         placeholder="Acme Inc."
         autocomplete="off"
         autofocus
-        [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched"
-        aria-describedby="work-order-name-error"
+        required
+        [class.form-field__control--invalid]="nameErrorVisible"
+        [attr.aria-invalid]="nameErrorVisible ? 'true' : null"
+        [attr.aria-describedby]="nameErrorVisible ? 'work-order-name-error' : null"
       />
-      @if (form.controls.name.invalid && form.controls.name.touched) {
-        <span class="form-field__error" id="work-order-name-error">Enter a work order name.</span>
-      }
-    </div>
-
-    <div class="form-field">
-      <label class="form-field__label" for="work-center">Work Center</label>
-      <ng-select
-        inputId="work-center"
-        formControlName="workCenterId"
-        [clearable]="false"
-        [searchable]="false"
-        bindLabel="data.name"
-        bindValue="docId"
-        [items]="workCenters"
-        aria-label="Work center"
-      />
+      <div class="form-field__error-slot">
+        @if (nameErrorVisible) {
+          <span class="form-field__error" id="work-order-name-error">
+            {{
+              form.controls.name.hasError('maxlength')
+                ? 'Work order name cannot exceed 100 characters.'
+                : 'Enter a work order name.'
+            }}
+          </span>
+        }
+      </div>
     </div>
 
     <div class="form-field">
       <label class="form-field__label" for="work-order-status">Status</label>
       <ng-select
+        class="form-field__status-select"
         inputId="work-order-status"
         formControlName="status"
         [clearable]="false"
@@ -70,20 +69,38 @@
         bindValue="value"
         [items]="statusOptions"
         aria-label="Work order status"
-      />
+        aria-required="true"
+      >
+        <ng-template ng-label-tmp let-item="item">
+          <app-chip
+            size="timeline"
+            [variant]="statusChipVariant(item.value)"
+            [label]="item.label"
+          />
+        </ng-template>
+        <ng-template ng-option-tmp let-item="item">
+          {{ item.label }}
+        </ng-template>
+      </ng-select>
+      <div class="form-field__error-slot"></div>
     </div>
 
     <div class="form-field">
       <label class="form-field__label" for="start-date">Start date</label>
-      <div class="date-control">
+      <div class="date-control" [class.date-control--invalid]="startDateInvalid">
         <input
+          #startDateInput
           class="form-field__control"
           id="start-date"
-          placeholder="yyyy-mm-dd"
+          placeholder="dd.mm.yyyy"
           formControlName="startDate"
           ngbDatepicker
           #startPicker="ngbDatepicker"
-          [attr.aria-invalid]="form.controls.startDate.invalid && form.controls.startDate.touched"
+          autocomplete="off"
+          required
+          [class.form-field__control--invalid]="startDateInvalid"
+          [attr.aria-invalid]="startDateInvalid ? 'true' : null"
+          [attr.aria-describedby]="startDateDescriptionId"
         />
         <button
           class="date-control__button"
@@ -94,20 +111,31 @@
           <span aria-hidden="true">▦</span>
         </button>
       </div>
+      <div class="form-field__error-slot">
+        @if (startDateRequiredErrorVisible) {
+          <span class="form-field__error" id="start-date-error">
+            Enter a start date.
+          </span>
+        }
+      </div>
     </div>
 
     <div class="form-field">
       <label class="form-field__label" for="end-date">End date</label>
-      <div class="date-control">
+      <div class="date-control" [class.date-control--invalid]="endDateInvalid">
         <input
+          #endDateInput
           class="form-field__control"
           id="end-date"
-          placeholder="yyyy-mm-dd"
+          placeholder="dd.mm.yyyy"
           formControlName="endDate"
           ngbDatepicker
           #endPicker="ngbDatepicker"
-          [attr.aria-invalid]="dateRangeInvalid || (form.controls.endDate.invalid && form.controls.endDate.touched)"
-          aria-describedby="date-range-error"
+          autocomplete="off"
+          required
+          [class.form-field__control--invalid]="endDateInvalid"
+          [attr.aria-invalid]="endDateInvalid ? 'true' : null"
+          [attr.aria-describedby]="endDateDescriptionId"
         />
         <button
           class="date-control__button"
@@ -118,16 +146,22 @@
           <span aria-hidden="true">▦</span>
         </button>
       </div>
-      @if (dateRangeInvalid) {
-        <span class="form-field__error" id="date-range-error">
-          End date must be on or after the start date.
-        </span>
-      }
+      <div class="form-field__error-slot">
+        @if (endDateErrorVisible) {
+          <span class="form-field__error" id="date-range-error">
+            {{
+              dateRangeErrorVisible
+                ? dateRangeErrorMessage
+                : 'Enter an end date.'
+            }}
+          </span>
+        }
+      </div>
     </div>
 
     @if (overlapError) {
       <div class="work-order-panel__alert" role="alert">
-        This work order overlaps another order in the selected work center.
+        This work order overlaps another order in the selected work center. Please adjust the Start or End Date
       </div>
     }
   </form>

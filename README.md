@@ -59,7 +59,7 @@ Start the development server:
 npm start
 ```
 
-Open `http://localhost:4200`.
+Open `http://localhost:57933`.
 
 Create a production build:
 
@@ -72,6 +72,25 @@ Run the unit tests:
 ```bash
 npm test -- --watch=false
 ```
+
+## Continuous Integration
+
+The repository includes a GitHub Actions workflow at `.github/workflows/ci.yml`. On pushes and
+pull requests targeting `main` or `develop`, it installs dependencies with `npm ci`, runs the
+unit tests, and creates a production build using the GitHub Pages base path.
+
+## GitHub Pages
+
+This project can be hosted as a static Angular build on GitHub Pages.
+
+For a repository named `work-order-schedule-timeline`, build with the matching base path:
+
+```bash
+npm run build -- --base-href /work-order-schedule-timeline/
+```
+
+Publish the generated `dist/work-order-schedule-timeline/browser` folder to GitHub Pages. If
+the repository name changes, update the `--base-href` value to match the published path.
 
 ## Project Structure
 
@@ -112,7 +131,7 @@ keyboard navigation, automated axe checks, and manual screen-reader testing.
 
 ## Current Limits
 
-- Data is held in memory and resets on refresh.
+- Data is mocked through a local service and persisted in `localStorage`.
 - The layout targets viewports of 800px and wider.
 - The styling still needs a final pixel-by-pixel pass against the Sketch file.
 - Drag selection, infinite scrolling, and end-to-end tests are not included.
@@ -120,6 +139,9 @@ keyboard navigation, automated axe checks, and manual screen-reader testing.
 
 See [documentation.md](documentation.md) for the complete requirement mapping, implementation
 details, known limitations, and improvement roadmap.
+
+See [thought-process.md](thought-process.md) for the chronological list of project questions,
+requests, and corrections used during AI-assisted development.
 
 ## Private GitHub Repository
 

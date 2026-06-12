@@ -1,0 +1,34 @@
+app-floating-label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 200;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+app-floating-label.floating-label-host--start {
+  left: 0;
+  transform: none;
+}
+
+.floating-label {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 5px;
+  background: var(--color-preview-label);
+  color: var(--color-white);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px var(--color-preview-shadow);
+
+  &--tooltip {
+    opacity: 0;
+  }
+}
+
+.work-order:hover .floating-label--tooltip,
+.work-order:focus-within .floating-label--tooltip {
+  opacity: 1;
+}

@@ -733,3 +733,10 @@ reproducing full assistant answers.
      the user scrolls or changes timescale. On reload, it restores the saved timescale and recenters
      the viewport on the saved date or matching week/month period, extending the temporary timeline
      range if needed.
+
+116. Can the project include a quick GitHub Actions pipeline and extra unit tests?
+
+     **Change:** Added a GitHub Actions CI workflow that runs on pushes and pull requests to
+     `main` and `develop`, installs dependencies, runs unit tests, and builds with the GitHub Pages
+     base path. Added unit tests for mocked API localStorage persistence and the create/edit panel's
+     two-month range validation.

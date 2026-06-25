@@ -131,7 +131,6 @@ src/
 `AppHeaderComponent`
 
 - Provides the semantic application header.
-- Displays the supplied NAOLOGIC logo with alternative text.
 - Reserves a stable location for future navigation or account controls.
 
 `AppFooterComponent`
@@ -361,14 +360,11 @@ Component styles use BEM naming:
 
 Global styles are limited to:
 
-- Font definitions
 - Page defaults
 - Shared focus treatment
 - Vendor styles
 
 Component-specific styling remains within each standalone component.
-
-The supplied Circular Std font URL is used with system-font fallbacks.
 
 ## 14. Responsive Scope
 
@@ -506,7 +502,6 @@ Recommended future coverage:
 - Match the panel width and field spacing.
 - Refine status badges and order bars.
 - Style ng-select and ngb-datepicker to match the references.
-- Add the exact logo asset if supplied.
 
 ### Phase 2: interaction quality
 

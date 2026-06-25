@@ -101,7 +101,7 @@ src/app/
     work-order-panel/            Shared create/edit form
     work-order-schedule/         Timeline rendering and interactions
   layout/
-    app-header/                  Application header and logo
+    app-header/                  Application header
     app-footer/                  Reserved application footer
   models/                        Work center, order, and timeline types
   services/
